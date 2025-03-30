@@ -59,10 +59,10 @@ class Ui_MainWindow(object):
     # ----------------------------------------------------------------------
     def setupStyles(self):
         """Holds all style sheets in one place for easier modification."""
-        self.main_window_style = "background-color: #040d12;"
+        self.main_window_style = "background-color: rgb(30, 0, 0);"
         self.button_style = """
             QPushButton {
-                background-color: rgb(30, 30, 30);
+                background-color: rgb(0, 0, 0);
                 color: white;
                 border: none;
                 padding: 10px 20px;
@@ -72,7 +72,7 @@ class Ui_MainWindow(object):
                 border: 1px solid white;
             }
             QPushButton:hover {
-                background-color: rgb(40, 40, 40);
+                background-color: rgb(30, 10, 10);
             }
         """
         self.quit_button_style = """
@@ -90,24 +90,25 @@ class Ui_MainWindow(object):
             border: 1px solid white;
         """
         self.slider_style = """
-            QSlider::groove:horizontal {
-                border: 1px solid #999999;
-                height: 2px;
-                background: #dddddd;
-                margin: 2px 0;
-            }
-            QSlider::handle:horizontal {
-                background: rgb(11, 62, 159);
-                width: 16px;
-                margin: -10px 0;
-                border-radius: 3px;
-            }
-            QSlider::sub-page:horizontal {
-                background: rgb(4, 29, 127);
-                border: 1px solid rgb(4, 29, 127);
-                height: 1px;
-                border-radius: 2px;
-            }
+        QSlider::groove:horizontal {
+            border: 1px solid #999999;
+            height: 2px;
+            background: #3E0202; /* Dark red, similar to the main window background */
+            margin: 2px 0;
+        }
+        QSlider::handle:horizontal {
+            background: rgb(0, 0, 0); /* Black, like the button background */
+            width: 16px;
+            margin: -10px 0; /* Increase or decrease the vertical margin if the handle seems misaligned */
+            border-radius: 3px;
+            border: 1px solid white; /* Matching button border */
+        }
+        QSlider::sub-page:horizontal {
+            background: white; /* Dark red, hover color from the button */
+            border: 1px solid rgb(30, 10, 10);
+            height: 2px;
+            border-radius: 2px;
+        }
         """
 
     # ----------------------------------------------------------------------
@@ -122,7 +123,7 @@ class Ui_MainWindow(object):
         self.title_icon.setObjectName("title_icon")
 
         self.title_label = self.util.createLabel(
-            text="Pixelizing",
+            text="Sift & See",
             style="color:white; padding:10px; padding-left:0;",
             isHead=True
         )
