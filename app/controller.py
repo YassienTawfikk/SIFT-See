@@ -93,7 +93,7 @@ class MainWindowController:
             return
 
         # Detect corners and get visualization
-        corners = self.harris_srv.detect_corners(self.original_image)
+        corners , time= self.harris_srv.detect_corners(self.original_image)
 
         if corners is not None:
             # Update processed image with visualization
@@ -107,6 +107,7 @@ class MainWindowController:
                         cv2.circle(self.processed_image, (x, y), 5, (255, 0, 0), -1)
 
             self.showProcessed()
+            print(time)
 
 
     def update_harris_parameters(self):

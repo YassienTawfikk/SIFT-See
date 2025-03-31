@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
-
+import time  # Importing the time module
 
 class HarrisService:
     def __init__(self):
@@ -18,10 +18,13 @@ class HarrisService:
             image: Input image (numpy array)
 
         Returns:
-            tuple: (corners, eigenvalues, visualization)
+            tuple: (corners, computation_time)
         """
         if image is None:
-            return None, None, None
+            return None, None
+
+        # Start timing
+        start_time = time.time()
 
         # Convert to grayscale if image is color
         if len(image.shape) == 3:
@@ -51,9 +54,10 @@ class HarrisService:
         # Find corners
         corners = harris_response > (self.threshold * harris_response.max())
 
+        # End timing
+        computation_time = time.time() - start_time
 
-        return corners
-
+        return corners, computation_time
 
     def update_parameters(self, k=None, threshold=None, window_size=None):
         """
@@ -70,4 +74,3 @@ class HarrisService:
             self.threshold = threshold
         if window_size is not None:
             self.window_size = window_size
-
