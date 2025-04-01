@@ -49,7 +49,7 @@ class MainWindowController:
         self.ui.reset_image_button.clicked.connect(self.reset_images)
 
         # Harris corner detection connections
-        self.ui.uniform_noise_button.clicked.connect(self.detect_harris_corners)
+        self.ui.harris_operator_apply_button.clicked.connect(self.detect_harris_corners)
         self.ui.harris_threshold_slider.valueChanged.connect(self.update_harris_parameters)
         self.ui.harris_kernel_size_button.clicked.connect(self.update_harris_parameters)
 

@@ -289,8 +289,8 @@ class Ui_MainWindow(object):
          harris_slider_label,
          harris_slider_layout) = self.util.createSlider(unit="%", style=self.slider_style, isVisible=True)
         self.harris_operator_layout.addLayout(harris_slider_layout)
-        self.uniform_noise_button = self.util.createButton("Apply", self.button_style)
-        self.harris_operator_layout.addWidget(self.uniform_noise_button)
+        self.harris_operator_apply_button = self.util.createButton("Apply", self.button_style)
+        self.harris_operator_layout.addWidget(self.harris_operator_apply_button)
 
         label01 = self.util.createLabel("", isHead=True)
         self.harris_operator_layout.addWidget(label01)
