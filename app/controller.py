@@ -93,27 +93,26 @@ class MainWindowController:
             return
 
         # Detect corners and get visualization
-        corners , time= self.harris_srv.detect_corners(self.original_image)
+        harris_corners, hessian_corners, time = self.harris_srv.detect_corners(self.original_image)
 
-        if corners is not None:
+        if hessian_corners is not None:
             # Update processed image with visualization
             # Create a copy of the original image to draw corners
             self.processed_image = self.original_image.copy()
 
             # Draw red circles at the detected corners
-            for y in range(corners.shape[0]):
-                for x in range(corners.shape[1]):
-                    if corners[y, x]:  # If a corner is detected
+            for y in range(hessian_corners.shape[0]):
+                for x in range(hessian_corners.shape[1]):
+                    if hessian_corners[y, x]:  # If a corner is detected
                         cv2.circle(self.processed_image, (x, y), 5, (255, 0, 0), -1)
 
             self.showProcessed()
             print(time)
 
-
     def update_harris_parameters(self):
         """Update Harris detector parameters based on slider values."""
         k = 0.04
-        threshold = self.ui.harris_threshold_slider.value() /1000
+        threshold = self.ui.harris_threshold_slider.value() /100
         window_size = self.ui.current_kernal_size
 
         self.harris_srv.update_parameters(k=k, threshold=threshold, window_size=window_size)

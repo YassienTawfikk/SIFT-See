@@ -4,24 +4,25 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt
 import time  # Importing the time module
 
+
 class HarrisService:
-    def __init__(self):
+    def _init_(self):
         self.k = 0.04  # Harris detector free parameter
         self.threshold = 0.01  # Threshold for corner detection
         self.window_size = 3  # Window size for Gaussian smoothing
 
     def detect_corners(self, image):
         """
-        Detect corners using Harris corner detector and analyze eigenvalues
+        Detect corners using both Harris corner detector and Hessian matrix eigenvalues
 
         Args:
             image: Input image (numpy array)
 
         Returns:
-            tuple: (corners, computation_time)
+            tuple: (harris_corners, hessian_corners, computation_time)
         """
         if image is None:
-            return None, None
+            return None, None, None
 
         # Start timing
         start_time = time.time()
@@ -32,6 +33,7 @@ class HarrisService:
         else:
             gray = image
 
+        # 1. Harris Corner Detection
         # Calculate derivatives
         dy, dx = np.gradient(gray)
 
@@ -51,17 +53,37 @@ class HarrisService:
         trace = Sxx + Syy
         harris_response = det - self.k * (trace ** 2)
 
-        # Find corners
-        corners = harris_response > (self.threshold * harris_response.max())
+        # Find Harris corners
+        harris_corners = harris_response > (self.threshold * harris_response.max())
+
+        # 2. Hessian Matrix Corner Detection
+        # Calculate second derivatives
+        dyy, dyx = np.gradient(dy)
+        dxy, dxx = np.gradient(dx)
+
+        # Apply Gaussian window to second derivatives
+        dxx = cv2.filter2D(dxx, -1, kernel)
+        dxy = cv2.filter2D(dxy, -1, kernel)
+        dyy = cv2.filter2D(dyy, -1, kernel)
+
+        # Calculate eigenvalues of Hessian matrix
+        trace = dxx + dyy
+        det = dxx * dyy - dxy * dxy
+
+        # Calculate negative eigenvalues
+        lambda2 = (trace - np.sqrt(trace ** 2 - 4 * det)) / 2
+
+        # Find corners where both eigenvalues are negative
+        hessian_corners = (lambda2 >self.threshold)
 
         # End timing
         computation_time = time.time() - start_time
 
-        return corners, computation_time
+        return harris_corners, hessian_corners, computation_time
 
     def update_parameters(self, k=None, threshold=None, window_size=None):
         """
-        Update the Harris detector parameters
+        Update the corner detector parameters
 
         Args:
             k: Harris detector free parameter
