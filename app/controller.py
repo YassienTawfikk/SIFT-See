@@ -55,15 +55,24 @@ class MainWindowController:
 
     def drawImage(self):
         self.path = self.srv.upload_image_file()
+
+        # Check if user cancels file selection right after upload attempt
+        if not self.path:
+            return
+
         self.original_image = cv2.imread(self.path)
+        if self.original_image is None:
+            return
+
         self.processed_image = self.original_image.copy()
 
-        # If user cancels file selection, path could be None
-        if self.path:
-            self.srv.clear_image(self.ui.original_groupBox)
-            self.srv.clear_image(self.ui.processed_groupBox)
-            self.srv.set_image_in_groupbox(self.ui.original_groupBox, self.original_image)
-            self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.processed_image)
+        # Clear any existing images displayed in the group boxes
+        self.srv.clear_image(self.ui.original_groupBox)
+        self.srv.clear_image(self.ui.processed_groupBox)
+
+        # Display the images in their respective group boxes
+        self.srv.set_image_in_groupbox(self.ui.original_groupBox, self.original_image)
+        self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.processed_image)
 
     def clear_images(self):
         if self.original_image is None:

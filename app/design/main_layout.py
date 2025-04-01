@@ -146,7 +146,7 @@ class Ui_MainWindow(object):
         self.save_image_button = self.util.createButton("Save", self.button_style)
         self.clear_image_button = self.util.createButton("Clear", self.button_style)
 
-        self.quit_app_button = self.util.createButton("X", self.quit_button_style)
+        self.quit_app_button = self.util.createButton("X")
         self.util.adjust_quit_button(self.quit_app_button)
 
         self.navbar_layout = QtWidgets.QHBoxLayout()
@@ -292,10 +292,11 @@ class Ui_MainWindow(object):
         self.harris_operator_apply_button = self.util.createButton("Apply", self.button_style)
         self.harris_operator_layout.addWidget(self.harris_operator_apply_button)
 
+        self.lambda_harris_operator_apply_button = self.util.createButton("Lambda Apply", self.button_style)
+        self.harris_operator_layout.addWidget(self.lambda_harris_operator_apply_button)
+
         label01 = self.util.createLabel("", isHead=True)
         self.harris_operator_layout.addWidget(label01)
-        label02 = self.util.createLabel("", isHead=True)
-        self.harris_operator_layout.addWidget(label02)
 
     def setupSIFTWidgets(self):
         """
