@@ -56,7 +56,6 @@ class MainWindowController:
     def drawImage(self):
         self.path = self.srv.upload_image_file()
 
-        # Check if user cancels file selection right after upload attempt
         if not self.path:
             return
 
@@ -91,7 +90,7 @@ class MainWindowController:
     def showProcessed(self):
         if self.processed_image is None:
             print("Error: Processed image is None.")
-            return  # Prevents crashing
+            return
 
         self.srv.clear_image(self.ui.processed_groupBox)
         self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.processed_image)
@@ -121,7 +120,7 @@ class MainWindowController:
     def update_harris_parameters(self):
         """Update Harris detector parameters based on slider values."""
         k = 0.04
-        threshold = self.ui.harris_threshold_slider.value() /100
+        threshold = self.ui.harris_threshold_slider.value() / 100
         window_size = self.ui.current_kernal_size
 
         self.harris_srv.update_parameters(k=k, threshold=threshold, window_size=window_size)
