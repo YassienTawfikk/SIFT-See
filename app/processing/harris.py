@@ -11,15 +11,15 @@ class HarrisService:
         self.threshold = 0.01  # Threshold for corner detection
         self.window_size = 3  # Window size for Gaussian smoothing
 
-    def detect_corners(self, image):
+    def detect_harris_corners(self, image):
         """
-        Detect corners using both Harris corner detector and Hessian matrix eigenvalues
+        Detect corners using Harris corner detector
 
         Args:
             image: Input image (numpy array)
 
         Returns:
-            tuple: (harris_corners, hessian_corners, computation_time)
+            tuple: (harris_corners, computation_time)
         """
         if image is None:
             return None, None, None
@@ -56,7 +56,40 @@ class HarrisService:
         # Find Harris corners
         harris_corners = harris_response > (self.threshold * harris_response.max())
 
+        #End time
+        computation_time = time.time() - start_time
+
+        return harris_corners, computation_time
+
+    def detect_lambda_corners(self, image):
+        """
+        Detect corners using Hessian matrix eigenvalues
+
+        Args:
+            image: Input image (numpy array)
+
+        Returns:
+            tuple: ( hessian_corners, computation_time)
+        """
+        if image is None:
+            return None, None, None
+
+        # Start timing
+        start_time = time.time()
+
+        # Convert to grayscale if image is color
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+
         # 2. Hessian Matrix Corner Detection
+        # Calculate derivatives
+        dy, dx = np.gradient(gray)
+
+        # Apply Gaussian window
+        kernel = np.ones((self.window_size, self.window_size), np.float32) / (self.window_size ** 2)
+
         # Calculate second derivatives
         dyy, dyx = np.gradient(dy)
         dxy, dxx = np.gradient(dx)
@@ -79,7 +112,7 @@ class HarrisService:
         # End timing
         computation_time = time.time() - start_time
 
-        return harris_corners, hessian_corners, computation_time
+        return hessian_corners, computation_time
 
     def update_parameters(self, k=None, threshold=None, window_size=None):
         """

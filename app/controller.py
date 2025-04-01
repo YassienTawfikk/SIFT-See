@@ -52,6 +52,7 @@ class MainWindowController:
 
         # Harris corner detection connections
         self.ui.harris_operator_apply_button.clicked.connect(self.detect_harris_corners)
+        self.ui.lambda_harris_operator_apply_button.clicked.connect(self.detect_lambda_corners)
         self.ui.harris_threshold_slider.valueChanged.connect(self.update_harris_parameters)
         self.ui.harris_kernel_size_button.clicked.connect(self.update_harris_parameters)
 
@@ -103,7 +104,29 @@ class MainWindowController:
             return
 
         # Detect corners and get visualization
-        harris_corners, hessian_corners, time = self.harris_srv.detect_corners(self.original_image)
+        harris_corners, time = self.harris_srv.detect_harris_corners(self.original_image)
+
+        if harris_corners is not None:
+            # Update processed image with visualization
+            # Create a copy of the original image to draw corners
+            self.processed_image = self.original_image.copy()
+
+            # Draw red circles at the detected corners
+            for y in range(harris_corners.shape[0]):
+                for x in range(harris_corners.shape[1]):
+                    if harris_corners[y, x]:  # If a corner is detected
+                        cv2.circle(self.processed_image, (x, y), 5, (255, 0, 0), -1)
+
+            self.showProcessed()
+            self.log.log(time)
+
+    def detect_lambda_corners(self):
+        """Detect corners using Harris corner detector."""
+        if self.original_image is None:
+            return
+
+        # Detect corners and get visualization
+        hessian_corners, time = self.harris_srv.detect_lambda_corners(self.original_image)
 
         if hessian_corners is not None:
             # Update processed image with visualization
@@ -117,7 +140,7 @@ class MainWindowController:
                         cv2.circle(self.processed_image, (x, y), 5, (255, 0, 0), -1)
 
             self.showProcessed()
-            print(time)
+            self.log.log(time)
 
     def update_harris_parameters(self):
         """Update Harris detector parameters based on slider values."""
