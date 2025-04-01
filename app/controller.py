@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 
 # Core utility and services
 from app.utils.clean_cache import remove_directories
+from app.utils.logging_manager import LoggingManager
 from app.services.image_service import ImageServices
 from app.processing.harris import HarrisService
 
@@ -26,6 +27,7 @@ class MainWindowController:
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self.MainWindow)
+        self.log = LoggingManager()
 
         self.srv = ImageServices()
         self.harris_srv = HarrisService()

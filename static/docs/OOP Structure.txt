@@ -1,4 +1,4 @@
-Pixelizer/
+SiftSee/
 │
 ├── README.md
 ├── requirements.txt
