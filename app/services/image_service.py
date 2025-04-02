@@ -82,7 +82,7 @@ class ImageServices:
         label = QtWidgets.QLabel(groupbox)
         label.setPixmap(pixmap)
         label.setScaledContents(True)
-        label.setMinimumSize(500, 500)
+        label.setMinimumSize(250, 250)
         label.setMaximumSize(groupbox.size())
 
         layout = groupbox.layout()

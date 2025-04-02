@@ -182,12 +182,7 @@ class Ui_MainWindow(object):
 
         # 2) Group Boxes
         self.setupImageGroupBoxes()
-        images_layout = QtWidgets.QHBoxLayout()
-        images_layout.setSpacing(10)
-        images_layout.addWidget(self.original_groupBox)
-        images_layout.addWidget(self.processed_groupBox)
-
-        self.main_content_layout.addLayout(images_layout)
+        self.main_content_layout.addWidget(self.image_area)
 
     # ----------------------------------------------------------------------
     # Sidebar with QStackedWidget
@@ -337,12 +332,12 @@ class Ui_MainWindow(object):
          sift_edge_threshold_slider_layout) = self.util.createSpinBox(1, 10, 1)
         self.page_sift_layout.addLayout(sift_edge_threshold_slider_layout)
 
-        sift_magnitude_threshold_label = self.util.createLabel("Magnitude Threshold", "Color:white;", isVisible=True)
-        self.page_sift_layout.addWidget(sift_magnitude_threshold_label)
-        (self.sift_magnitude_threshold_spinbox,
-         sift_magnitude_threshold_slider_label,
-         sift_magnitude_threshold_slider_layout) = self.util.createSpinBox(1, 10, 1)
-        self.page_sift_layout.addLayout(sift_magnitude_threshold_slider_layout)
+        # sift_magnitude_threshold_label = self.util.createLabel("Magnitude Threshold", "Color:white;", isVisible=True)
+        # self.page_sift_layout.addWidget(sift_magnitude_threshold_label)
+        # (self.sift_magnitude_threshold_spinbox,
+        #  sift_magnitude_threshold_slider_label,
+        #  sift_magnitude_threshold_slider_layout) = self.util.createSpinBox(1, 10, 1)
+        # self.page_sift_layout.addLayout(sift_magnitude_threshold_slider_layout)
 
         self.upload_sift_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
         self.page_sift_layout.addWidget(self.upload_sift_photo_button)
@@ -395,24 +390,56 @@ class Ui_MainWindow(object):
 
     def setupImageGroupBoxes(self):
         """Creates two group boxes: Original Image & Processed Image."""
+        # Calculate sizes based on screen dimensions
+        default_width = int(self.screen_size.width() * (502 / 1280))
+        default_height = int(self.screen_size.height() * (526 / 800))
+        
+        # Create the group boxes with default sizes
         self.original_groupBox, _ = self.util.createGroupBox(
             title="Original Image",
-            size=QtCore.QSize(int(self.screen_size.width() * (502 / 1280)), int(self.screen_size.height() * (526 / 800))),
+            size=QtCore.QSize(default_width, default_height),
             style=self.groupbox_style,
             isGraph=False
         )
+        
         self.processed_groupBox, _ = self.util.createGroupBox(
             title="Processed Image",
-            size=QtCore.QSize(int(self.screen_size.width() * (502 / 1280)), int(self.screen_size.height() * (526 / 800))),
+            size=QtCore.QSize(default_width, default_height),
             style=self.groupbox_style,
             isGraph=False
         )
+        
         self.additional_groupBox, _ = self.util.createGroupBox(
             title="Additional Image",
-            size=QtCore.QSize(int(self.screen_size.width() * (502 / 1280)), int(self.screen_size.height() * (526 / 800))),
+            size=QtCore.QSize(default_width, default_height),
             style=self.groupbox_style,
             isGraph=False
         )
+        self.additional_groupBox.hide()  # Initially hidden
+
+        # Create default layout (side by side)
+        self.image_area = QtWidgets.QWidget()
+        self.default_layout = QtWidgets.QHBoxLayout()
+        self.default_layout.addWidget(self.original_groupBox)
+        self.default_layout.addWidget(self.processed_groupBox)
+        self.default_layout.setSpacing(10)
+
+        # Create SIFT layout (large top, small bottom)
+        self.sift_layout = QtWidgets.QVBoxLayout()
+        
+        # Bottom layout for SIFT mode
+        self.bottom_layout = QtWidgets.QHBoxLayout()
+        self.bottom_layout.addWidget(self.original_groupBox)
+        self.bottom_layout.addWidget(self.additional_groupBox)
+        self.bottom_layout.setSpacing(10)
+        
+        # Main layout that will switch between default and SIFT layouts
+        self.main_image_layout = QtWidgets.QVBoxLayout(self.image_area)
+        self.main_image_layout.addLayout(self.default_layout)
+        
+        # Set spacing and margins
+        # self.main_image_layout.setSpacing(10)
+        # self.main_image_layout.setContentsMargins(0, 0, 10, 0) # *left, *top,  *right,  *bottom
 
     # ----------------------------------------------------------------------
     # Retranslate
@@ -425,24 +452,71 @@ class Ui_MainWindow(object):
     #  Show/Hide Logic
     # ----------------------------------------------------------------------
     def show_main_buttons(self):
-        """
-        Switches back to the main buttons page, shows the original and processed group boxes,
-        and hides the hybrid image group boxes.
-        """
+        """Switch back to default layout."""
         # Show the original and processed group boxes
         self.original_groupBox.show()
         self.processed_groupBox.show()
+        
+        if hasattr(self, 'original_sizes'):
+            # Remove widgets from SIFT layout
+            self.main_image_layout.removeWidget(self.processed_groupBox)
+            self.bottom_layout.removeWidget(self.original_groupBox)
+            self.bottom_layout.removeWidget(self.additional_groupBox)
+            
+            # Restore original sizes
+            self.processed_groupBox.setFixedSize(self.original_sizes['processed'])
+            self.original_groupBox.setFixedSize(self.original_sizes['original'])
+            self.additional_groupBox.setFixedSize(self.original_sizes['additional'])
+            
+            # Hide additional group box
+            self.additional_groupBox.hide()
+            
+            # Restore default layout
+            self.main_image_layout.removeItem(self.bottom_layout)
+            self.default_layout.addWidget(self.original_groupBox)
+            self.default_layout.addWidget(self.processed_groupBox)
+            self.main_image_layout.addLayout(self.default_layout)
 
         # Switch to the main buttons page
-        self.sidebar_stacked.setCurrentIndex(0)  # Assuming main buttons page is at index 0
+        self.sidebar_stacked.setCurrentIndex(0)
 
     def show_harris_controls(self):
         """Switch QStackedWidget to page 1 (noise controls)."""
         self.sidebar_stacked.setCurrentIndex(1)
 
     def show_sift_controls(self):
-        """Switch QStackedWidget to page 1 (noise controls)."""
+        """Switch to SIFT mode with new layout."""
         self.sidebar_stacked.setCurrentIndex(2)
+        
+        # Store original sizes
+        self.original_sizes = {
+            'processed': self.processed_groupBox.size(),
+            'original': self.original_groupBox.size(),
+            'additional': self.additional_groupBox.size()
+        }
+        
+        # Calculate SIFT mode sizes
+        processed_width = int(self.screen_size.width() * 0.75)
+        processed_height = int(self.screen_size.height() * 0.5)
+        small_width = int(processed_width * 0.48)
+        small_height = int(self.screen_size.height() * 0.3)
+        
+        # Remove widgets from default layout
+        self.default_layout.removeWidget(self.original_groupBox)
+        self.default_layout.removeWidget(self.processed_groupBox)
+        
+        # Resize for SIFT mode
+        self.processed_groupBox.setFixedSize(processed_width, processed_height)
+        self.original_groupBox.setFixedSize(small_width, small_height)
+        self.additional_groupBox.setFixedSize(small_width, small_height)
+        
+        # Clear main layout and set up SIFT layout
+        self.main_image_layout.removeItem(self.default_layout)
+        self.main_image_layout.addWidget(self.processed_groupBox)
+        self.main_image_layout.addLayout(self.bottom_layout)
+        
+        # Show additional group box
+        self.additional_groupBox.show()
 
     def show_matching_controls(self):
         self.sidebar_stacked.setCurrentIndex(3)
