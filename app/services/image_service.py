@@ -62,7 +62,6 @@ class ImageServices:
             return True
         else:
             return False
-        #
 
     def set_image_in_groupbox(self, groupbox, image):
         if image is None:

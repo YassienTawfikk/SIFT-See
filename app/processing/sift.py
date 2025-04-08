@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter
 class SIFTService:
     def __init__(self):
         self.sigma = 1.6  # Base sigma
-        self.k = 2  # Number of scales per octave
+        self.k = 2  # Scale multiplier between levels
         self.constant_threshold = 0.04  # Contrast threshold
         self.edge_threshold = 10.0  # Edge threshold
         self.num_octaves = 4  # Number of octaves
@@ -27,26 +27,26 @@ class SIFTService:
 
     def build_gaussian_pyramid(self, image: np.ndarray) -> List[List[np.ndarray]]:
         """
-        Build Gaussian pyramid for the image.
+        creates a pyramid structure where each octave represents a different resolution level
+        for every Octave we get different Scales (apply gaussian blur)/ blurred images
         Returns list of octaves, each containing gaussian blurred images.
         """
-        # Convert to float32
+
         image = image.astype('float32')
-        
-        # Initialize pyramid
+
         pyramid = []
-        
-        for octave in range(self.num_octaves):
+
+        for octave in range(self.num_octaves): # Octave = Resolution (row)
             octave_images = []
-            
-            # Downsample image for each octave
+
+            # Downsample image for each octave -> halving resolution
             if octave > 0:
                 image = cv2.resize(image, (image.shape[1]//2, image.shape[0]//2))
             
-            # Generate scales for this octave
+            # Generate "scales" for this octave
             current_sigma = self.sigma
             for scale in range(self.num_scales):
-                # Apply Gaussian blur
+                # Applying Gaussian blur with increasing sigma values (σ, σk, σk²,...) at each scale
                 blurred = cv2.GaussianBlur(image, (0, 0), current_sigma)
                 octave_images.append(blurred)
                 current_sigma *= self.k
@@ -57,7 +57,8 @@ class SIFTService:
 
     def build_dog_pyramid(self, gaussian_pyramid: List[List[np.ndarray]]) -> List[List[np.ndarray]]:
         """
-        Build Difference of Gaussian (DoG) pyramid.
+        computes differences between consecutive Gaussian blurred images in same octave (in the same row)
+        approximation to the Laplacian of Gaussian
         Returns list of octaves, each containing DoG images.
         """
         dog_pyramid = []
@@ -75,7 +76,7 @@ class SIFTService:
     def find_keypoints(self, dog_pyramid: List[List[np.ndarray]]) -> List[cv2.KeyPoint]:
         """
         Detect keypoints in the DoG pyramid using vectorized operations.
-        Returns list of keypoints.
+        Finding local extrema (maxima/minima) in the 3D DoG space (x,y positions across scales)
         """
         keypoints = []
         
@@ -99,7 +100,7 @@ class SIFTService:
                 maxima = np.zeros_like(current, dtype=bool)
                 minima = np.zeros_like(current, dtype=bool)
                 
-                # Vectorized extrema detection
+                # Vectorized extrema (maxima/minima) detection
                 for i in range(1, height-1):
                     for j in range(1, width-1):
                         # Extract 3x3x3 cube
@@ -110,9 +111,10 @@ class SIFTService:
                         ])
                         
                         center_val = current[i, j]
-                        if abs(center_val) > self.constant_threshold:
+                        if abs(center_val) > self.constant_threshold:    # Contrast threshold: Discards weak features
                             if center_val > 0 and center_val >= cube.max():
-                                # Edge response test
+
+                                # Edge response test: Uses Hessian matrix to eliminate edge responses (low curvature)
                                 Dxx = current[i, j+1] + current[i, j-1] - 2*center_val
                                 Dyy = current[i+1, j] + current[i-1, j] - 2*center_val
                                 Dxy = ((current[i+1, j+1] + current[i-1, j-1]) - 
@@ -150,7 +152,7 @@ class SIFTService:
 
     def compute_descriptors(self, image: np.ndarray, keypoints: List[cv2.KeyPoint]) -> np.ndarray:
         """
-        Compute SIFT descriptors using vectorized operations.
+        creates distinctive descriptors for each keypoint
         Returns array of descriptors.
         """
         if not keypoints:
@@ -229,16 +231,16 @@ class SIFTService:
         # Convert to grayscale if needed
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
         
-        # Build Gaussian pyramid
+        # 1) Build Gaussian pyramid
         gaussian_pyramid = self.build_gaussian_pyramid(gray)
         
-        # Build DoG pyramid
+        # 2) Build DoG pyramid
         dog_pyramid = self.build_dog_pyramid(gaussian_pyramid)
         
-        # Find keypoints
+        # 3) Find keypoints
         keypoints = self.find_keypoints(dog_pyramid)
         
-        # Compute descriptors
+        # 4) Compute descriptors
         descriptors = self.compute_descriptors(image, keypoints)
 
         computation_time = time.time() - start_time
