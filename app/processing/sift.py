@@ -258,42 +258,52 @@ class SIFTService:
         )
 
     def match_features(self, descriptors1: np.ndarray, descriptors2: np.ndarray, 
-                      ratio_threshold: float = 0.75) -> list:
-        """Match features using vectorized operations."""
+                      ratio_threshold: float = 0.75, method="SSD") -> list:
+        """Match features using SSD or Normalized Cross Correlation"""
         if len(descriptors1) == 0 or len(descriptors2) == 0:
             return []
-            
-        # Use batch processing for large descriptor sets
-        batch_size = 100
+       
         matches = []
-        
-        for i in range(0, len(descriptors1), batch_size):
-            batch_desc1 = descriptors1[i:i + batch_size]
-            
-            # Compute distances using broadcasting
-            distances = np.linalg.norm(
-                batch_desc1[:, np.newaxis, :] - descriptors2[np.newaxis, :, :], 
-                axis=2
-            )
-            
-            # Find two best matches
-            idx = np.argsort(distances, axis=1)
-            best_dists = distances[np.arange(len(batch_desc1)), idx[:, 0]]
-            second_dists = distances[np.arange(len(batch_desc1)), idx[:, 1]]
-            
-            # Apply ratio test
-            good_matches = best_dists < ratio_threshold * second_dists
-            
-            # Create match objects
-            for k in range(len(batch_desc1)):
-                if good_matches[k]:
-                    match = cv2.DMatch()
-                    match.queryIdx = i + k
-                    match.trainIdx = idx[k, 0]
-                    match.distance = best_dists[k]
-                    matches.append(match)
-        
-        return matches[:100]  # Limit number of matches for visualization
+
+        for i, desc1 in enumerate(descriptors1):
+
+            if method=="SSD":
+                # Compute SSD to every descriptor in descriptors2
+                ssd = np.sum((descriptors2 - desc1) ** 2, axis=1)
+                
+                # Get the index of the descriptor in descriptors2 with the smallest SSD
+                j = np.argmin(ssd)
+                
+                # Store the match (i, j)
+                distance = ssd[j]
+
+                # Create a DMatch object: (queryIdx, trainIdx, distance)
+                match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(distance))
+
+            else:  #method is NNC
+  
+                # Normalize descriptor1
+                norm1 = desc1 / (np.linalg.norm(desc1) + 1e-10)
+
+                # Normalize all descriptors2
+                norm2 = descriptors2 / (np.linalg.norm(descriptors2, axis=1, keepdims=True) + 1e-10)
+
+                # Compute NCC as dot product
+                ncc_scores = norm2 @ norm1  # shape: (N2,)
+                
+                # Get best match (maximum NCC)
+                j = np.argmax(ncc_scores)
+                similarity = ncc_scores[j]
+
+                # Create a DMatch object (higher NCC = better match, so use -similarity for distance)
+                match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(-similarity))
+
+
+            matches.append(match)
+            # print(match)
+            # for m in matches[:10]:  # just print first 10 to keep it clean
+            #     print(f"queryIdx: {m.queryIdx}, trainIdx: {m.trainIdx}, distance: {m.distance:.2f}")
+        return matches
 
     def draw_matches(self, img1: np.ndarray, kp1: list, img2: np.ndarray, 
                     kp2: list, matches: list) -> np.ndarray:
