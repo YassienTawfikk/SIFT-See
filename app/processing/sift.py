@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from typing import Tuple, List, Optional
 from scipy.ndimage import gaussian_filter
+import time
 
 
 class SIFTService:
@@ -68,7 +69,7 @@ class SIFTService:
             for i in range(len(octave_images) - 1):
                 # Compute difference of consecutive Gaussian blurred images
                 dog = octave_images[i+1] - octave_images[i]
-                dog_octave.append(dog)
+                dog_octave.append(dog) # DoG for every octave
             dog_pyramid.append(dog_octave)
             
         return dog_pyramid
@@ -79,8 +80,9 @@ class SIFTService:
         Finding local extrema (maxima/minima) in the 3D DoG space (x,y positions across scales)
         """
         keypoints = []
-        
-        for octave_idx, dog_octave in enumerate(dog_pyramid):
+        # Loop through octaves: Each octave represents a different scale level of the image.
+        for octave_idx, dog_octave in enumerate(dog_pyramid): # dog_octave is a list
+            # For each octave, look at three consecutive scales (previous, current, next).
             for scale_idx in range(1, len(dog_octave) - 1):
                 # Get current DoG image and its neighbors
                 current = dog_octave[scale_idx]
@@ -96,7 +98,7 @@ class SIFTService:
                 prev_pad = np.pad(prev, 1, mode='constant')
                 next_pad = np.pad(next, 1, mode='constant')
                 
-                # Find local extrema
+                # Creates arrays to mark where local maxima/minima are found.
                 maxima = np.zeros_like(current, dtype=bool)
                 minima = np.zeros_like(current, dtype=bool)
                 
@@ -120,10 +122,10 @@ class SIFTService:
                                 Dxy = ((current[i+1, j+1] + current[i-1, j-1]) - 
                                       (current[i+1, j-1] + current[i-1, j+1])) / 4
                                 
-                                tr = Dxx + Dyy
+                                trace = Dxx + Dyy
                                 det = Dxx * Dyy - Dxy * Dxy
                                 
-                                if det > 0 and tr*tr/det < (self.edge_threshold + 1)**2/self.edge_threshold:
+                                if det > 0 and trace*trace/det < (self.edge_threshold + 1)**2/self.edge_threshold:
                                     kp = cv2.KeyPoint()
                                     scale_factor = 2**octave_idx
                                     kp.pt = (j * scale_factor, i * scale_factor)
@@ -137,10 +139,10 @@ class SIFTService:
                                 Dxy = ((current[i+1, j+1] + current[i-1, j-1]) - 
                                       (current[i+1, j-1] + current[i-1, j+1])) / 4
                                 
-                                tr = Dxx + Dyy
+                                trace = Dxx + Dyy
                                 det = Dxx * Dyy - Dxy * Dxy
                                 
-                                if det > 0 and tr*tr/det < (self.edge_threshold + 1)**2/self.edge_threshold:
+                                if det > 0 and trace*trace/det < (self.edge_threshold + 1)**2/self.edge_threshold:
                                     kp = cv2.KeyPoint()
                                     scale_factor = 2**octave_idx
                                     kp.pt = (j * scale_factor, i * scale_factor)
@@ -225,7 +227,6 @@ class SIFTService:
         Extract SIFT features from an image.
         Returns keypoints, descriptors, and computation time.
         """
-        import time
         start_time = time.time()
 
         # Convert to grayscale if needed
@@ -244,6 +245,7 @@ class SIFTService:
         descriptors = self.compute_descriptors(image, keypoints)
 
         computation_time = time.time() - start_time
+        print(computation_time)
         
         return keypoints, descriptors, computation_time
 

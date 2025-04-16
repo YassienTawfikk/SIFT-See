@@ -47,8 +47,8 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.original_groupBox.show()
-        self.processed_groupBox.show()
+        # self.original_groupBox.show()
+        # self.processed_groupBox.show()
 
         # 7) Set window title, etc.
         self.retranslateUi(MainWindow)
@@ -393,7 +393,7 @@ class Ui_MainWindow(object):
         # Calculate sizes based on screen dimensions
         default_width = int(self.screen_size.width() * (502 / 1280))
         default_height = int(self.screen_size.height() * (526 / 800))
-        
+
         # Create the group boxes with default sizes
         self.original_groupBox, _ = self.util.createGroupBox(
             title="Original Image",
@@ -401,45 +401,44 @@ class Ui_MainWindow(object):
             style=self.groupbox_style,
             isGraph=False
         )
-        
+
         self.processed_groupBox, _ = self.util.createGroupBox(
             title="Processed Image",
             size=QtCore.QSize(default_width, default_height),
             style=self.groupbox_style,
             isGraph=False
         )
-        
+
         self.additional_groupBox, _ = self.util.createGroupBox(
             title="Additional Image",
             size=QtCore.QSize(default_width, default_height),
             style=self.groupbox_style,
             isGraph=False
         )
-        self.additional_groupBox.hide()  # Initially hidden
 
-        # Create default layout (side by side)
-        self.image_area = QtWidgets.QWidget()
-        self.default_layout = QtWidgets.QHBoxLayout()
+        # Create container widgets for each layout
+        self.default_container = QtWidgets.QWidget()
+        self.sift_container = QtWidgets.QWidget()
+
+        # Default layout (side by side)
+        self.default_layout = QtWidgets.QHBoxLayout(self.default_container)
         self.default_layout.addWidget(self.original_groupBox)
         self.default_layout.addWidget(self.processed_groupBox)
         self.default_layout.setSpacing(10)
 
-        # Create SIFT layout (large top, small bottom)
-        self.sift_layout = QtWidgets.QVBoxLayout()
-        
-        # Bottom layout for SIFT mode
-        self.bottom_layout = QtWidgets.QHBoxLayout()
-        self.bottom_layout.addWidget(self.original_groupBox)
-        self.bottom_layout.addWidget(self.additional_groupBox)
-        self.bottom_layout.setSpacing(10)
-        
-        # Main layout that will switch between default and SIFT layouts
-        self.main_image_layout = QtWidgets.QVBoxLayout(self.image_area)
-        self.main_image_layout.addLayout(self.default_layout)
-        
-        # Set spacing and margins
-        # self.main_image_layout.setSpacing(10)
-        # self.main_image_layout.setContentsMargins(0, 0, 10, 0) # *left, *top,  *right,  *bottom
+        # Hide the SIFT container initially
+        self.sift_container.hide()
+        # Hide additional group box initially
+        self.additional_groupBox.hide()
+
+        # SIFT layout will be set up when needed in show_sift_controls
+
+        # Main image area layout
+        self.image_area = QtWidgets.QWidget()
+        self.main_image_layout = QtWidgets.QStackedLayout(self.image_area)
+        self.main_image_layout.addWidget(self.default_container)
+        self.main_image_layout.addWidget(self.sift_container)
+        self.main_image_layout.setCurrentIndex(0)  # Show default layout initially
 
     # ----------------------------------------------------------------------
     # Retranslate
@@ -453,29 +452,31 @@ class Ui_MainWindow(object):
     # ----------------------------------------------------------------------
     def show_main_buttons(self):
         """Switch back to default layout."""
-        # Show the original and processed group boxes
-        self.original_groupBox.show()
-        self.processed_groupBox.show()
-        
+        # Reset to default sizes if we have them stored
         if hasattr(self, 'original_sizes'):
-            # Remove widgets from SIFT layout
-            self.main_image_layout.removeWidget(self.processed_groupBox)
-            self.bottom_layout.removeWidget(self.original_groupBox)
-            self.bottom_layout.removeWidget(self.additional_groupBox)
-            
-            # Restore original sizes
             self.processed_groupBox.setFixedSize(self.original_sizes['processed'])
             self.original_groupBox.setFixedSize(self.original_sizes['original'])
             self.additional_groupBox.setFixedSize(self.original_sizes['additional'])
-            
-            # Hide additional group box
-            self.additional_groupBox.hide()
-            
-            # Restore default layout
-            self.main_image_layout.removeItem(self.bottom_layout)
-            self.default_layout.addWidget(self.original_groupBox)
-            self.default_layout.addWidget(self.processed_groupBox)
-            self.main_image_layout.addLayout(self.default_layout)
+
+        # We need to reparent the widgets back to default container
+        self.original_groupBox.setParent(None)
+        self.processed_groupBox.setParent(None)
+        self.additional_groupBox.setParent(None)
+
+        # Clear default layout and re-add widgets
+        while self.default_layout.count():
+            item = self.default_layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+
+        self.default_layout.addWidget(self.original_groupBox)
+        self.default_layout.addWidget(self.processed_groupBox)
+
+        # Hide additional group box
+        self.additional_groupBox.hide()
+
+        # Switch to default layout using the stacked layout
+        self.main_image_layout.setCurrentIndex(0)
 
         # Switch to the main buttons page
         self.sidebar_stacked.setCurrentIndex(0)
@@ -486,37 +487,55 @@ class Ui_MainWindow(object):
 
     def show_sift_controls(self):
         """Switch to SIFT mode with new layout."""
-        self.sidebar_stacked.setCurrentIndex(2)
-        
         # Store original sizes
         self.original_sizes = {
             'processed': self.processed_groupBox.size(),
             'original': self.original_groupBox.size(),
             'additional': self.additional_groupBox.size()
         }
-        
+
         # Calculate SIFT mode sizes
         processed_width = int(self.screen_size.width() * 0.75)
         processed_height = int(self.screen_size.height() * 0.5)
         small_width = int(processed_width * 0.48)
         small_height = int(self.screen_size.height() * 0.3)
-        
-        # Remove widgets from default layout
-        self.default_layout.removeWidget(self.original_groupBox)
-        self.default_layout.removeWidget(self.processed_groupBox)
-        
+
         # Resize for SIFT mode
         self.processed_groupBox.setFixedSize(processed_width, processed_height)
         self.original_groupBox.setFixedSize(small_width, small_height)
         self.additional_groupBox.setFixedSize(small_width, small_height)
-        
-        # Clear main layout and set up SIFT layout
-        self.main_image_layout.removeItem(self.default_layout)
-        self.main_image_layout.addWidget(self.processed_groupBox)
-        self.main_image_layout.addLayout(self.bottom_layout)
-        
+
+        # Set up SIFT layout - do this every time to ensure proper widget parenting
+        # Clear any existing layout in the sift container
+        if self.sift_container.layout():
+            old_layout = self.sift_container.layout()
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                if item.widget():
+                    item.widget().setParent(None)
+            QtWidgets.QWidget().setLayout(old_layout)  # This will delete the old layout
+
+        self.sift_layout = QtWidgets.QVBoxLayout(self.sift_container)
+        self.bottom_layout = QtWidgets.QHBoxLayout()
+
+        # We need to reparent the widgets from default container
+        self.original_groupBox.setParent(None)
+        self.processed_groupBox.setParent(None)
+        self.additional_groupBox.setParent(None)
+
+        self.bottom_layout.addWidget(self.original_groupBox)
+        self.bottom_layout.addWidget(self.additional_groupBox)
+        self.sift_layout.addWidget(self.processed_groupBox)
+        self.sift_layout.addLayout(self.bottom_layout)
+
         # Show additional group box
         self.additional_groupBox.show()
+
+        # Switch to SIFT layout using the stacked layout
+        self.main_image_layout.setCurrentIndex(1)
+
+        # Switch to SIFT controls page
+        self.sidebar_stacked.setCurrentIndex(2)
 
     def show_matching_controls(self):
         self.sidebar_stacked.setCurrentIndex(3)
