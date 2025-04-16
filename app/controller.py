@@ -202,88 +202,115 @@ class MainWindowController:
         self.srv.set_image_in_groupbox(self.ui.additional_groupBox, self.second_image)
 
     def extract_sift_features(self):
-        """Extract SIFT features from both images."""
+        """Extract SIFT features from original images first, then resize for display."""
         if self.original_image is None:
             return
 
-        # Extract features from the first image
+        # Extract features from original full-size images
         self.keypoints_1, self.descriptors_1, time = self.sift_srv.extract_features(self.original_image)
-        
-        # Create visualization for first image
-        img1_with_keypoints = self.sift_srv.draw_keypoints(self.original_image.copy(), self.keypoints_1)
-        
+
         if self.second_image is not None:
-            # Extract features from second image
             self.keypoints_2, self.descriptors_2, _ = self.sift_srv.extract_features(self.second_image)
-            img2_with_keypoints = self.sift_srv.draw_keypoints(self.second_image.copy(), self.keypoints_2)
-            
-            # Get dimensions
-            h1, w1 = img1_with_keypoints.shape[:2]
-            h2, w2 = img2_with_keypoints.shape[:2]
-            
-            # Calculate target height (use the smaller height)
-            target_height = min(h1, h2)
-            
-            # Calculate new widths maintaining aspect ratio
-            new_w1 = int(w1 * (target_height / h1))
-            new_w2 = int(w2 * (target_height / h2))
-            
-            # Resize both images to have the same height
-            img1_resized = cv2.resize(img1_with_keypoints, (new_w1, target_height))
-            img2_resized = cv2.resize(img2_with_keypoints, (new_w2, target_height))
-            
-            # Create a combined image with both visualizations
-            combined_image = cv2.hconcat([img1_resized, img2_resized])
-            
-            # Show the combined visualization in the large processed box
-            self.processed_image = combined_image
-            self.showProcessed()
-        else:
-            # If no second image, just show the first image with keypoints
-            self.processed_image = img1_with_keypoints
-            self.showProcessed()
-            
+
+        # Now create visualizations with resized images
+        self._display_sift_features()
         self.log.log(time)
 
-    def match_sift_features(self):
-        """Match SIFT features between two images."""
-        if (self.descriptors_1 is None or self.descriptors_2 is None or 
-            self.keypoints_1 is None or self.keypoints_2 is None):
-            return
-
-        # Get the size of the processed group box
+        # Adjust keypoints for resized images
+    def _adjust_keypoints(self, keypoints, scale_x, scale_y):
+        adjusted = []
+        for kp in keypoints:
+            adjusted.append(cv2.KeyPoint(
+                x=kp.pt[0] * scale_x,
+                y=kp.pt[1] * scale_y,
+                size=kp.size * min(scale_x, scale_y),
+                angle=kp.angle,
+                response=kp.response,
+                octave=kp.octave,
+                class_id=kp.class_id
+            ))
+        return adjusted
+    def _display_sift_features(self):
+        """Display SIFT features on resized versions of the images."""
+        # Get groupbox dimensions
         box_width = self.ui.processed_groupBox.width()
         box_height = self.ui.processed_groupBox.height()
-        
+
         # Calculate target size for each image (half width, full height)
         target_width = box_width // 2
         target_height = box_height
-        
+
         # Resize both images while maintaining aspect ratio
         def resize_image(image):
+            if image is None:
+                return None, 1.0, 1.0
             h, w = image.shape[:2]
-            # Calculate scaling factor to fit in half the box
             scale_w = target_width / w
             scale_h = target_height / h
             scale = min(scale_w, scale_h)
-            
             new_width = int(w * scale)
             new_height = int(h * scale)
-            
-            return cv2.resize(image, (new_width, new_height))
-        
-        # Resize both images
-        img1_resized = resize_image(self.original_image)
-        img2_resized = resize_image(self.second_image)
-        
-        # Update keypoints for resized images
-        def adjust_keypoints(keypoints, original_shape, new_shape):
-            scale_x = new_shape[1] / original_shape[1]
-            scale_y = new_shape[0] / original_shape[0]
-            
-            adjusted_keypoints = []
+            return cv2.resize(image, (new_width, new_height)), scale, scale
+
+        # Resize and get scale factors
+        img1_resized, scale_x1, scale_y1 = resize_image(self.original_image)
+
+        if self.second_image is not None:
+            img2_resized, scale_x2, scale_y2 = resize_image(self.second_image)
+
+
+            # Adjust keypoints
+            kp1_adjusted = self._adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
+            kp2_adjusted = self._adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
+
+            # Draw keypoints on resized images
+            img1_with_kp = self.sift_srv.draw_keypoints(img1_resized.copy(), kp1_adjusted)
+            img2_with_kp = self.sift_srv.draw_keypoints(img2_resized.copy(), kp2_adjusted)
+
+            # Combine images
+            self.processed_image = cv2.hconcat([img1_with_kp, img2_with_kp])
+        else:
+            # Single image case
+            kp1_adjusted = self._adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
+            self.processed_image = self.sift_srv.draw_keypoints(img1_resized.copy(), kp1_adjusted)
+
+        self.showProcessed()
+
+    def match_sift_features(self):
+        """Match features using original descriptors but display on resized images."""
+        if (self.descriptors_1 is None or self.descriptors_2 is None or
+                self.keypoints_1 is None or self.keypoints_2 is None):
+            return
+
+        # Get groupbox dimensions
+        box_width = self.ui.processed_groupBox.width()
+        box_height = self.ui.processed_groupBox.height()
+
+        # Calculate target size for each image (half width, full height)
+        target_width = box_width // 2
+        target_height = box_height
+
+        # Resize both images while maintaining aspect ratio
+        def resize_image(image):
+            if image is None:
+                return None, 1.0, 1.0
+            h, w = image.shape[:2]
+            scale_w = target_width / w
+            scale_h = target_height / h
+            scale = min(scale_w, scale_h)
+            new_width = int(w * scale)
+            new_height = int(h * scale)
+            return cv2.resize(image, (new_width, new_height)), scale, scale
+
+        # Resize and get scale factors
+        img1_resized, scale_x1, scale_y1 = resize_image(self.original_image)
+        img2_resized, scale_x2, scale_y2 = resize_image(self.second_image)
+
+        # Adjust keypoints for resized images
+        def adjust_keypoints(keypoints, scale_x, scale_y):
+            adjusted = []
             for kp in keypoints:
-                new_kp = cv2.KeyPoint(
+                adjusted.append(cv2.KeyPoint(
                     x=kp.pt[0] * scale_x,
                     y=kp.pt[1] * scale_y,
                     size=kp.size * min(scale_x, scale_y),
@@ -291,33 +318,23 @@ class MainWindowController:
                     response=kp.response,
                     octave=kp.octave,
                     class_id=kp.class_id
-                )
-                adjusted_keypoints.append(new_kp)
-            return adjusted_keypoints
-        
-        # Adjust keypoints for the resized images
-        keypoints1_adjusted = adjust_keypoints(
-            self.keypoints_1, 
-            self.original_image.shape, 
-            img1_resized.shape
-        )
-        keypoints2_adjusted = adjust_keypoints(
-            self.keypoints_2, 
-            self.second_image.shape, 
-            img2_resized.shape
-        )
+                ))
+            return adjusted
 
-        # Match features
+        # Adjust keypoints
+        kp1_adjusted = adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
+        kp2_adjusted = adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
+
+        # Match features (using original descriptors)
         matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2)
-        
-        # Draw matches using the resized images and adjusted keypoints
+
+        # Draw matches on resized images with adjusted keypoints
         self.processed_image = self.sift_srv.draw_matches(
-            img1_resized, keypoints1_adjusted,
-            img2_resized, keypoints2_adjusted,
+            img1_resized, kp1_adjusted,
+            img2_resized, kp2_adjusted,
             matches
         )
-        
-        # Show the result
+
         self.showProcessed()
 
     def closeApp(self):
