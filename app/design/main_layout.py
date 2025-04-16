@@ -228,14 +228,6 @@ class Ui_MainWindow(object):
         self.setupSIFTWidgets()
         self.sidebar_stacked.addWidget(self.page_sift_controls)
 
-        # PAGE 3: Mathcing Controls
-        self.page_matching_controls = QtWidgets.QWidget()
-        self.page_matching_layout = QtWidgets.QVBoxLayout(self.page_matching_controls)
-        self.page_matching_layout.setSpacing(10)
-
-        self.setupMatchingWidgets()
-        self.sidebar_stacked.addWidget(self.page_matching_controls)
-
         # By default, show page 0
         self.sidebar_stacked.setCurrentIndex(0)
 
@@ -248,13 +240,11 @@ class Ui_MainWindow(object):
             "Harris Operator", self.button_style, self.show_harris_controls
         )
         self.show_sift_options_button = self.util.createButton("SIFT", self.button_style, self.show_sift_controls)
-        self.show_matching_options_button = self.util.createButton("Matching", self.button_style, self.show_matching_controls)
 
         # We'll store these main buttons in a list if you need to show/hide them
         self.MAIN_BUTTONS = [
             self.show_harris_options_button,
             self.show_sift_options_button,
-            self.show_matching_options_button,
         ]
         self.kernel_sizes_array = [3, 5, 7]
         self.current_kernal_size = 3
@@ -345,31 +335,11 @@ class Ui_MainWindow(object):
         self.sift_extract_points_button = self.util.createButton("Extract Points", self.button_style)
         self.page_sift_layout.addWidget(self.sift_extract_points_button)
 
-        self.sift_match_button = self.util.createButton("Match", self.button_style)
-        self.page_sift_layout.addWidget(self.sift_match_button)
+        self.sift_normalized_match_button = self.util.createButton("Normalized Match", self.button_style)
+        self.page_sift_layout.addWidget(self.sift_normalized_match_button)
 
-    def setupMatchingWidgets(self):
-        """
-        Creates the noise widgets (labels, sliders) and places them in harris_operator_layout.
-        """
-        back_button = self.util.createButton("Back", self.button_style, self.show_main_buttons)
-        self.page_matching_layout.addWidget(back_button)
-
-        # =========================================================================================================
-        matching_techniques_label = self.util.createLabel("Matching Techs", isHead=True)
-        self.page_matching_layout.addWidget(matching_techniques_label)
-
-        self.toggle_matching_techniques_button = self.util.createButton("SSD", self.button_style, self.toggle_matching_techniques)
-        self.page_matching_layout.addWidget(self.toggle_matching_techniques_button)
-
-        self.upload_matching_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
-        self.page_matching_layout.addWidget(self.upload_matching_photo_button)
-
-        self.match_photos_button = self.util.createButton("Match", self.button_style)
-        self.page_matching_layout.addWidget(self.match_photos_button)
-
-        label01 = self.util.createLabel("", isHead=True)
-        self.page_matching_layout.addWidget(label01)
+        self.sift_ssd_match_button = self.util.createButton("SSD Match", self.button_style)
+        self.page_sift_layout.addWidget(self.sift_ssd_match_button)
 
     def toggle_kernel_size(self, kernal_button):
         """
@@ -536,9 +506,6 @@ class Ui_MainWindow(object):
 
         # Switch to SIFT controls page
         self.sidebar_stacked.setCurrentIndex(2)
-
-    def show_matching_controls(self):
-        self.sidebar_stacked.setCurrentIndex(3)
 
     def toggle_matching_techniques(self):
         text = "Cross Validation" if self.toggle_matching_techniques_button.text() == "SSD" else "SSD"

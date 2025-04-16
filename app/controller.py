@@ -71,7 +71,7 @@ class MainWindowController:
         # self.ui.sift_magnitude_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
         self.ui.sift_extract_points_button.clicked.connect(self.extract_sift_features)
-        self.ui.sift_match_button.clicked.connect(self.match_sift_features)
+        self.ui.sift_normalized_match_button.clicked.connect(self.match_sift_features)
 
     def drawImage(self):
         self.path = self.srv.upload_image_file()
