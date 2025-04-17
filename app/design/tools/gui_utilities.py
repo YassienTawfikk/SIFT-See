@@ -132,29 +132,32 @@ class GUIUtilities:
         group_box.setLayout(graph_layout)
         return plot_widget
 
-    def createSlider(self, min_value=0, max_value=100, initial_value=50, unit=None, style=SLIDER_STYLE, isVisible=True):
+    def createSlider(self, min_value=0, max_value=100, initial_value=50, unit=None, style=SLIDER_STYLE, isVisible=True, is_float=False):
         slider_layout = QtWidgets.QHBoxLayout()
         slider_layout.setContentsMargins(0, 0, 0, 0)
         slider_layout.setSpacing(10)
 
+        scale_factor = 100 if is_float else 1  # Multiplier to simulate float behavior
+
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        slider.setMinimum(min_value)
-        slider.setMaximum(max_value)
-        slider.setValue(initial_value)
+        slider.setMinimum(int(min_value * scale_factor))
+        slider.setMaximum(int(max_value * scale_factor))
+        slider.setValue(int(initial_value * scale_factor))
         slider.setMaximumSize(180, 50)
 
         unit_text = unit if unit is not None else ""
-        label = QtWidgets.QLabel(f"{initial_value}{unit_text}")
+        label = QtWidgets.QLabel(f"{initial_value:.2f}{unit_text}" if is_float else f"{initial_value}{unit_text}")
         label.setMinimumWidth(25)
         label.setMaximumHeight(50)
         label.setStyleSheet("color:white;")
 
         def update_label(value):
-            label.setText(f"{value}{unit_text}")
+            actual_value = value / scale_factor if is_float else value
+            label.setText(f"{actual_value:.2f}{unit_text}" if is_float else f"{actual_value}{unit_text}")
 
         slider.valueChanged.connect(update_label)
-        if style:
-            slider.setStyleSheet(style)
+        slider.setStyleSheet(style if style else "")
+
         if not isVisible:
             slider.hide()
             label.hide()
@@ -169,7 +172,6 @@ class GUIUtilities:
         spinbox_layout.setContentsMargins(0, 0, 0, 0)
         spinbox_layout.setSpacing(10)
 
-        # Use QDoubleSpinBox if float is required
         spinbox = QtWidgets.QDoubleSpinBox() if is_float else QtWidgets.QSpinBox()
         spinbox.setMinimum(min_value)
         spinbox.setMaximum(max_value)
@@ -178,16 +180,27 @@ class GUIUtilities:
         spinbox.setMaximumWidth(180)
 
         if is_float:
-            spinbox.setDecimals(2)  # Optional: specify number of decimals
-            spinbox.setSingleStep(0.1)
+            # Auto-set decimals and step based on range
+            value_range = max_value - min_value
+
+            # Example logic: finer control for small ranges
+            if value_range <= 1:
+                spinbox.setDecimals(3)
+                spinbox.setSingleStep(0.001)
+            elif value_range <= 10:
+                spinbox.setDecimals(2)
+                spinbox.setSingleStep(0.01)
+            else:
+                spinbox.setDecimals(1)
+                spinbox.setSingleStep(0.1)
 
         unit_text = unit if unit is not None else ""
-        label = QtWidgets.QLabel(f"{initial_value}{unit_text}")
+        label = QtWidgets.QLabel(f"{initial_value:.3f}{unit_text}" if is_float else f"{initial_value}{unit_text}")
         label.setMinimumWidth(30)
         label.setStyleSheet("color: white;")
 
         def update_label(value):
-            label.setText(f"{value:.2f}{unit_text}" if is_float else f"{int(value)}{unit_text}")
+            label.setText(f"{value:.3f}{unit_text}" if is_float else f"{int(value)}{unit_text}")
 
         spinbox.valueChanged.connect(update_label)
         spinbox.setStyleSheet(style if style else "color:white")
