@@ -9,20 +9,22 @@ class SIFTService:
     def __init__(self):
         self.sigma = 1.6  # Base sigma
         self.k = 2  # Scale multiplier between levels
-        self.constant_threshold = 0.04  # Contrast threshold
-        self.edge_threshold = 10.0  # Edge threshold
         self.num_octaves = 4  # Number of octaves
         self.num_scales = 5  # Number of scales per octave
+        #keypoint detection
+        self.contrast_threshold = 0.04  # Contrast threshold
+        self.edge_threshold = 10.0  # Edge threshold
+
         
     def update_parameters(self, sigma: float = None, k: int = None, 
-                         constant_threshold: float = None, edge_threshold: float = None):
+                         contrast_threshold: float = None, edge_threshold: float = None):
         """Update SIFT parameters."""
         if sigma is not None:
             self.sigma = sigma
         if k is not None:
             self.k = k
-        if constant_threshold is not None:
-            self.constant_threshold = constant_threshold
+        if contrast_threshold is not None:
+            self.contrast_threshold = contrast_threshold
         if edge_threshold is not None:
             self.edge_threshold = edge_threshold
 
@@ -75,152 +77,101 @@ class SIFTService:
         return dog_pyramid
 
     def find_keypoints(self, dog_pyramid: List[List[np.ndarray]]) -> List[cv2.KeyPoint]:
-        """
-        Detect keypoints in the DoG pyramid using vectorized operations.
-        Finding local extrema (maxima/minima) in the 3D DoG space (x,y positions across scales)
-        """
         keypoints = []
-        # Loop through octaves: Each octave represents a different scale level of the image.
-        for octave_idx, dog_octave in enumerate(dog_pyramid): # dog_octave is a list
-            # For each octave, look at three consecutive scales (previous, current, next).
-            for scale_idx in range(1, len(dog_octave) - 1):
-                # Get current DoG image and its neighbors
-                current = dog_octave[scale_idx]
-                prev = dog_octave[scale_idx - 1]
-                next = dog_octave[scale_idx + 1]
-
-                # Create 3D array of local patches
-                height, width = current.shape
-                # window_size = 3
+        for octave_idx, octave in enumerate(dog_pyramid):
+            for scale_idx in range(1, len(octave) - 1):
+                prev, current, next = octave[scale_idx - 1:scale_idx + 2]
 
                 # Pad images to handle borders
-                current_pad = np.pad(current, 1, mode='constant')
-                prev_pad = np.pad(prev, 1, mode='constant')
-                next_pad = np.pad(next, 1, mode='constant')
+                pad = [(1, 1)] * 2
+                prev_pad = np.pad(prev, pad, 'constant')
+                curr_pad = np.pad(current, pad, 'constant')
+                next_pad = np.pad(next, pad, 'constant')
 
-                # Vectorized extrema (maxima/minima) detection
-                for i in range(1, height-1):
-                    for j in range(1, width-1):
-                        # Extract 3x3x3 cube
+                h, w = current.shape
+                for i in range(1, h - 1):
+                    for j in range(1, w - 1):
+                        val = current[i, j]
+                        if abs(val) <= self.contrast_threshold:
+                            continue
+
+                        # Check 3x3x3 neighborhood
                         cube = np.stack([
-                            prev_pad[i:i+3, j:j+3],
-                            current_pad[i:i+3, j:j+3],
-                            next_pad[i:i+3, j:j+3]
+                            prev_pad[i:i + 3, j:j + 3],
+                            curr_pad[i:i + 3, j:j + 3],
+                            next_pad[i:i + 3, j:j + 3]
                         ])
 
-                        center_val = current[i, j]
-                        if abs(center_val) > self.constant_threshold:    # Contrast threshold: Discards weak features
-                            if center_val > 0 and center_val >= cube.max(): #This is checking if the point is a local maximum across all three scales
+                        is_max = val > 0 and val >= cube.max()
+                        is_min = val < 0 and val <= cube.min()
+                        if not (is_max or is_min):
+                            continue
 
-                                # Edge response test: Uses Hessian matrix to eliminate edge responses (low curvature)
-                                Dxx = current[i, j+1] + current[i, j-1] - 2*center_val
-                                Dyy = current[i+1, j] + current[i-1, j] - 2*center_val
-                                Dxy = ((current[i+1, j+1] + current[i-1, j-1]) -
-                                      (current[i+1, j-1] + current[i-1, j+1])) / 4
+                        # Edge response check , Hessian matrix components (Dxx, Dyy, Dxy)
+                        Dxx = current[i, j + 1] + current[i, j - 1] - 2 * val
+                        Dyy = current[i + 1, j] + current[i - 1, j] - 2 * val
+                        Dxy = (current[i + 1, j + 1] + current[i - 1, j - 1] -
+                               current[i + 1, j - 1] - current[i - 1, j + 1]) / 4
 
-                                trace = Dxx + Dyy
-                                det = Dxx * Dyy - Dxy * Dxy
+                        trace, det = Dxx + Dyy, Dxx * Dyy - Dxy * Dxy
+                        edge_ratio = (self.edge_threshold + 1) ** 2 / self.edge_threshold
+                        if det <= 0 or trace ** 2 / det >= edge_ratio: #Filters edge responses using curvature ratio: (trace²/det) < threshold
+                            continue
 
-                                if det > 0 and trace*trace/det < (self.edge_threshold + 1)**2/self.edge_threshold:
-                                    kp = cv2.KeyPoint()
-                                    scale_factor = 2**octave_idx
-                                    kp.pt = (j * scale_factor, i * scale_factor)
-                                    kp.size = self.sigma * (2**(scale_idx/self.num_scales)) * scale_factor
-                                    kp.octave = octave_idx
-                                    keypoints.append(kp)
-                            elif center_val < 0 and center_val <= cube.min():
-                                # Edge response test: Uses Hessian matrix to eliminate edge responses (low curvature)
-                                Dxx = current[i, j+1] + current[i, j-1] - 2*center_val
-                                Dyy = current[i+1, j] + current[i-1, j] - 2*center_val
-                                Dxy = ((current[i+1, j+1] + current[i-1, j-1]) -
-                                      (current[i+1, j-1] + current[i-1, j+1])) / 4   # The division by 4 is for normalization
+                        # Create keypoint
+                        kp = cv2.KeyPoint()
+                        scale_factor = 2 ** octave_idx      # Stores position scaled by octave factor (2^octave)
+                        kp.pt = (j * scale_factor, i * scale_factor)
+                        kp.size = self.sigma * (2 ** (scale_idx / self.num_scales)) * scale_factor  #Calculates feature size based on scale and octave
+                        kp.octave = octave_idx
+                        keypoints.append(kp)
 
-
-                                trace = Dxx + Dyy
-                                det = Dxx * Dyy - Dxy * Dxy
-
-                                if det > 0 and trace*trace/det < (self.edge_threshold + 1)**2/self.edge_threshold:
-                                    kp = cv2.KeyPoint()
-
-                                    # Each octave represents a doubling of scale, so we use 2 raised to the power of the octave index
-                                    scale_factor = 2**octave_idx
-
-                                    #Sets the keypoint's coordinates, mapping from the current octave's coordinates back to original image coordinates
-                                    kp.pt = (j * scale_factor, i * scale_factor)
-
-                                    kp.size = self.sigma * (2**(scale_idx/self.num_scales)) * scale_factor
-                                    kp.octave = octave_idx
-                                    keypoints.append(kp)
-        
-        return keypoints[:500]  # Limit number of keypoints for better performance
+        return keypoints[:500]
 
     def compute_descriptors(self, image: np.ndarray, keypoints: List[cv2.KeyPoint]) -> np.ndarray:
-        """
-        creates distinctive descriptors/fingerprint for each keypoint
-        Returns array of descriptors.
-        """
         if not keypoints:
             return np.array([])
 
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
-
-        # Pre-compute gradients for the entire image
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
         dx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
         dy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
 
-        # Pre-compute magnitude and orientation
-        magnitude = np.sqrt(dx*dx + dy*dy)
-        orientation = np.arctan2(dy, dx) * 180/np.pi # orientation in degree
-        orientation[orientation < 0] += 360  # Ensure positive angles
+        magnitude = np.sqrt(dx ** 2 + dy ** 2)
+        orientation = np.rad2deg(np.arctan2(dy, dx)) % 360
 
         descriptors = []
-        patch_size = 16  # Sets the patch size to 16×16 pixels (standard for SIFT)
+        for kp in keypoints:
+            x, y = map(int, kp.pt)
+            scale = kp.size / self.sigma
+            radius = int(6 * scale)
 
-        # Process keypoints in batches for better performance
-        batch_size = min(50, len(keypoints))
-        for batch_start in range(0, len(keypoints), batch_size):
-            batch_end = min(batch_start + batch_size, len(keypoints))
-            batch_keypoints = keypoints[batch_start:batch_end]
+            # Check boundary conditions
+            if (x < radius or x + radius >= gray.shape[1] or
+                    y < radius or y + radius >= gray.shape[0]):
+                continue
 
-            batch_descriptors = []
-            for kp in batch_keypoints:
-                x, y = int(kp.pt[0]), int(kp.pt[1])
-                scale = kp.size/self.sigma
-                radius = int(6 * scale)
+            # Extract and resize patches
+            patch = (slice(y - radius, y + radius + 1), slice(x - radius, x + radius + 1))
+            mag_patch = cv2.resize(magnitude[patch], (16, 16))
+            ori_patch = cv2.resize(orientation[patch], (16, 16))
 
-                if (x - radius < 0 or x + radius >= gray.shape[1] or
-                    y - radius < 0 or y + radius >= gray.shape[0]):
-                    continue
+            # Build histogram
+            hist = np.zeros(128, dtype=np.float32)
+            for i in range(4):
+                for j in range(4):
+                    cell_mag = mag_patch[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4]
+                    cell_ori = ori_patch[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4]
 
-                # Extract and resize patches
-                patch_mag = cv2.resize(magnitude[y-radius:y+radius+1, x-radius:x+radius+1],
-                                    (patch_size, patch_size))
-                patch_ori = cv2.resize(orientation[y-radius:y+radius+1, x-radius:x+radius+1],
-                                    (patch_size, patch_size))
+                    for bin in range(8):
+                        mask = (cell_ori >= bin * 45) & (cell_ori < (bin + 1) * 45)
+                        hist[i * 32 + j * 8 + bin] = cell_mag[mask].sum()
 
-                # Compute descriptor using vectorized operations
-                hist = np.zeros(128, dtype=np.float32)
-                for i in range(4):
-                    for j in range(4):
-                        cell_mag = patch_mag[i*4:(i+1)*4, j*4:(j+1)*4]
-                        cell_ori = patch_ori[i*4:(i+1)*4, j*4:(j+1)*4]
+            # Normalize descriptor
+            hist /= np.linalg.norm(hist) + 1e-7
+            hist = np.clip(hist, 0, 0.2)
+            hist /= np.linalg.norm(hist) + 1e-7
 
-                        # Compute histogram using vectorized operations
-                        for bin_idx in range(8):
-                            angle_start = bin_idx * 45
-                            angle_end = (bin_idx + 1) * 45
-                            mask = (cell_ori >= angle_start) & (cell_ori < angle_end)
-                            hist[i*32 + j*8 + bin_idx] = np.sum(cell_mag[mask])
-
-                # Normalize and clip
-                norm = np.sqrt(np.sum(hist * hist) + 1e-7)
-                hist = np.minimum(hist / norm, 0.2)
-                norm = np.sqrt(np.sum(hist * hist) + 1e-7)
-                hist = hist / norm
-
-                batch_descriptors.append(hist)
-
-            descriptors.extend(batch_descriptors)
+            descriptors.append(hist)
 
         return np.array(descriptors)
 

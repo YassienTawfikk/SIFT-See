@@ -308,12 +308,12 @@ class Ui_MainWindow(object):
          sift_k_slider_layout) = self.util.createSpinBox(1, 10, 1)
         self.page_sift_layout.addLayout(sift_k_slider_layout)
 
-        sift_constant_threshold_label = self.util.createLabel("Constant Threshold", "Color:white;", isVisible=True)
-        self.page_sift_layout.addWidget(sift_constant_threshold_label)
-        (self.sift_constant_threshold_spinbox,
-         sift_constant_threshold_slider_label,
-         sift_constant_threshold_slider_layout) = self.util.createSpinBox(0.01, 0.1, 0.055, is_float=True)
-        self.page_sift_layout.addLayout(sift_constant_threshold_slider_layout)
+        sift_contrast_threshold_label = self.util.createLabel("Constant Threshold", "Color:white;", isVisible=True)
+        self.page_sift_layout.addWidget(sift_contrast_threshold_label)
+        (self.sift_contrast_threshold_spinbox,
+         sift_contrast_threshold_slider_label,
+         sift_contrast_threshold_slider_layout) = self.util.createSpinBox(0.01, 0.1, 0.055, is_float=True)
+        self.page_sift_layout.addLayout(sift_contrast_threshold_slider_layout)
 
         sift_edge_threshold_label = self.util.createLabel("Edge Threshold", "Color:white;", isVisible=True)
         self.page_sift_layout.addWidget(sift_edge_threshold_label)

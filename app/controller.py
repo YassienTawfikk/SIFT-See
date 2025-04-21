@@ -66,7 +66,7 @@ class MainWindowController:
         # SIFT connections
         self.ui.sift_sigma_slider.valueChanged.connect(self.update_sift_parameters)
         self.ui.sift_k_spinbox.valueChanged.connect(self.update_sift_parameters)
-        self.ui.sift_constant_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
+        self.ui.sift_contrast_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         self.ui.sift_edge_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         # self.ui.sift_magnitude_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
@@ -93,7 +93,7 @@ class MainWindowController:
 
         # Display the original image in the bottom-left box
         self.srv.set_image_in_groupbox(self.ui.original_groupBox, self.original_image)
-        
+
         # Initially show the same image in the large processed box
         self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.processed_image)
 
@@ -176,14 +176,14 @@ class MainWindowController:
         """Update SIFT parameters based on UI control values."""
         sigma = self.ui.sift_sigma_slider.value() / 2.0  # Scale to 0.5-5.0 range
         k = self.ui.sift_k_spinbox.value()
-        constant_threshold = self.ui.sift_constant_threshold_spinbox.value() / 100.0
+        contrast_threshold = self.ui.sift_contrast_threshold_spinbox.value() / 100.0
         edge_threshold = self.ui.sift_edge_threshold_spinbox.value()
         # magnitude_threshold = self.ui.sift_magnitude_threshold_spinbox.value() / 100.0
 
         self.sift_srv.update_parameters(
             sigma=sigma,
             k=k,
-            constant_threshold=constant_threshold,
+            contrast_threshold=contrast_threshold,
             edge_threshold=edge_threshold,
             # magnitude_threshold=magnitude_threshold
         )
