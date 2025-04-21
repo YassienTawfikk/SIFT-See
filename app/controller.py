@@ -71,7 +71,8 @@ class MainWindowController:
         # self.ui.sift_magnitude_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
         self.ui.sift_extract_points_button.clicked.connect(self.extract_sift_features)
-        self.ui.sift_normalized_match_button.clicked.connect(self.match_sift_features)
+        self.ui.sift_normalized_match_button.clicked.connect(lambda: self.match_sift_features("NCC"))
+        self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
 
     def drawImage(self):
         self.path = self.srv.upload_image_file()
@@ -276,7 +277,7 @@ class MainWindowController:
 
         self.showProcessed()
 
-    def match_sift_features(self):
+    def match_sift_features(self, type="SSD"):
         """Match features using original descriptors but display on resized images."""
         if (self.descriptors_1 is None or self.descriptors_2 is None or
                 self.keypoints_1 is None or self.keypoints_2 is None):
@@ -326,7 +327,7 @@ class MainWindowController:
         kp2_adjusted = adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
 
         # Match features (using original descriptors)
-        matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2)
+        matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2, type)
 
         # Draw matches on resized images with adjusted keypoints
         self.processed_image = self.sift_srv.draw_matches(

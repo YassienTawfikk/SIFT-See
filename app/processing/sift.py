@@ -261,17 +261,20 @@ class SIFTService:
             color=(0, 255, 0)
         )
 
-    def match_features(self, descriptors1: np.ndarray, descriptors2: np.ndarray,
-                      ratio_threshold: float = 0.75, method="SSD") -> list:
+    def match_features(self, descriptors1: np.ndarray, descriptors2: np.ndarray, method="SSD") -> list:
         """Match features using SSD or Normalized Cross Correlation"""
         if len(descriptors1) == 0 or len(descriptors2) == 0:
             return []
 
         matches = []
+        SSD_threshold=100
+        NNC_threshold=0.8
 
         for i, desc1 in enumerate(descriptors1):
 
             if method=="SSD":
+                print("SSD METHOD USED")
+
                 # Compute SSD to every descriptor in descriptors2
                 ssd = np.sum((descriptors2 - desc1) ** 2, axis=1)
 
@@ -281,10 +284,14 @@ class SIFTService:
                 # Store the match (i, j)
                 distance = ssd[j]
 
+                if distance > SSD_threshold:
+                    continue
+
                 # Create a DMatch object: (queryIdx, trainIdx, distance)
                 match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(distance))
 
             else:  #method is NNC
+                print("NNC METHOD USED")
 
                 # Normalize descriptor1
                 norm1 = desc1 / (np.linalg.norm(desc1) + 1e-10)
@@ -298,6 +305,9 @@ class SIFTService:
                 # Get best match (maximum NCC)
                 j = np.argmax(ncc_scores)
                 similarity = ncc_scores[j]
+
+                if similarity < NNC_threshold:
+                    continue 
 
                 # Create a DMatch object (higher NCC = better match, so use -similarity for distance)
                 match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(-similarity))
