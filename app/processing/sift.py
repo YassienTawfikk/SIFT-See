@@ -16,7 +16,7 @@ class SIFTService:
         self.edge_threshold = 10.0  # Edge threshold
 
         
-    def update_parameters(self, sigma: float = None, k: int = None, 
+    def update_parameters(self, sigma: float = None, k: int = None,
                          contrast_threshold: float = None, edge_threshold: float = None):
         """Update SIFT parameters."""
         if sigma is not None:
@@ -78,6 +78,7 @@ class SIFTService:
 
     def find_keypoints(self, dog_pyramid: List[List[np.ndarray]]) -> List[cv2.KeyPoint]:
         keypoints = []
+        # print("initial parameters : " , self.sigma , self.k, self.contrast_threshold, self.edge_threshold)
         for octave_idx, octave in enumerate(dog_pyramid):
             for scale_idx in range(1, len(octave) - 1):
                 prev, current, next = octave[scale_idx - 1:scale_idx + 2]
@@ -107,6 +108,9 @@ class SIFTService:
                         if not (is_max or is_min):
                             continue
 
+                        # H = [ Dxx  Dxy ]
+                        #     [ Dxy  Dyy ]
+
                         # Edge response check , Hessian matrix components (Dxx, Dyy, Dxy)
                         Dxx = current[i, j + 1] + current[i, j - 1] - 2 * val
                         Dyy = current[i + 1, j] + current[i - 1, j] - 2 * val
@@ -122,7 +126,8 @@ class SIFTService:
                         kp = cv2.KeyPoint()
                         scale_factor = 2 ** octave_idx      # Stores position scaled by octave factor (2^octave)
                         kp.pt = (j * scale_factor, i * scale_factor)
-                        kp.size = self.sigma * (2 ** (scale_idx / self.num_scales)) * scale_factor  #Calculates feature size based on scale and octave
+                        current_sigma = self.sigma * (self.k ** scale_idx)
+                        kp.size = current_sigma * scale_factor  # scale_factor = 2^octave_idx
                         kp.octave = octave_idx
                         keypoints.append(kp)
 
@@ -133,6 +138,7 @@ class SIFTService:
             return np.array([])
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+        # Computes x/y gradients
         dx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
         dy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
 
@@ -152,16 +158,19 @@ class SIFTService:
 
             # Extract and resize patches
             patch = (slice(y - radius, y + radius + 1), slice(x - radius, x + radius + 1))
+            # Extracts 16x16 patch around keypoint (scaled by feature size)
             mag_patch = cv2.resize(magnitude[patch], (16, 16))
             ori_patch = cv2.resize(orientation[patch], (16, 16))
 
             # Build histogram
             hist = np.zeros(128, dtype=np.float32)
+
             for i in range(4):
                 for j in range(4):
                     cell_mag = mag_patch[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4]
                     cell_ori = ori_patch[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4]
 
+                    # Each cell creates 8-bin orientation histogram (0-360°)
                     for bin in range(8):
                         mask = (cell_ori >= bin * 45) & (cell_ori < (bin + 1) * 45)
                         hist[i * 32 + j * 8 + bin] = cell_mag[mask].sum()

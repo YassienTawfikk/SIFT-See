@@ -186,7 +186,7 @@ class GUIUtilities:
             # Example logic: finer control for small ranges
             if value_range <= 1:
                 spinbox.setDecimals(3)
-                spinbox.setSingleStep(0.001)
+                spinbox.setSingleStep(0.01)
             elif value_range <= 10:
                 spinbox.setDecimals(2)
                 spinbox.setSingleStep(0.01)

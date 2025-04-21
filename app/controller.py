@@ -174,11 +174,13 @@ class MainWindowController:
 
     def update_sift_parameters(self):
         """Update SIFT parameters based on UI control values."""
-        sigma = self.ui.sift_sigma_slider.value() / 2.0  # Scale to 0.5-5.0 range
+        sigma = self.ui.sift_sigma_slider.value() / 100
         k = self.ui.sift_k_spinbox.value()
-        contrast_threshold = self.ui.sift_contrast_threshold_spinbox.value() / 100.0
+        contrast_threshold = self.ui.sift_contrast_threshold_spinbox.value()
         edge_threshold = self.ui.sift_edge_threshold_spinbox.value()
         # magnitude_threshold = self.ui.sift_magnitude_threshold_spinbox.value() / 100.0
+
+        # print("updated parameters : ",sigma, k, contrast_threshold,edge_threshold)
 
         self.sift_srv.update_parameters(
             sigma=sigma,
@@ -187,6 +189,7 @@ class MainWindowController:
             edge_threshold=edge_threshold,
             # magnitude_threshold=magnitude_threshold
         )
+
 
     def upload_second_image(self):
         """Upload a second image for SIFT matching."""
