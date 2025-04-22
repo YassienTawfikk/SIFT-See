@@ -291,6 +291,9 @@ class Ui_MainWindow(object):
         back_button = self.util.createButton("Back", self.button_style, self.show_main_buttons)
         self.page_sift_layout.addWidget(back_button)
 
+        self.upload_sift_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
+        self.page_sift_layout.addWidget(self.upload_sift_photo_button)
+
         sift_title = self.util.createLabel("SIFT", "color:white;", isVisible=True, isHead=True)
         self.page_sift_layout.addWidget(sift_title)
 
@@ -329,14 +332,27 @@ class Ui_MainWindow(object):
         #  sift_magnitude_threshold_slider_layout) = self.util.createSpinBox(1, 10, 1)
         # self.page_sift_layout.addLayout(sift_magnitude_threshold_slider_layout)
 
-        self.upload_sift_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
-        self.page_sift_layout.addWidget(self.upload_sift_photo_button)
-
         self.sift_extract_points_button = self.util.createButton("Extract Points", self.button_style)
         self.page_sift_layout.addWidget(self.sift_extract_points_button)
 
+        sift_normalized_label = self.util.createLabel("Normalized Threshold", "Color:white;", isVisible=True)
+        self.page_sift_layout.addWidget(sift_normalized_label)
+
+        (self.sift_normalized_threshold_slider,
+         sift_normalized_threshold_slider_label,
+         sift_normalized_threshold_slider_layout) = self.util.createSlider(0, 300, 150)
+        self.page_sift_layout.addLayout(sift_normalized_threshold_slider_layout)
+
         self.sift_normalized_match_button = self.util.createButton("Normalized Match", self.button_style)
         self.page_sift_layout.addWidget(self.sift_normalized_match_button)
+
+        sift_ssd_label = self.util.createLabel("SST Threshold", "Color:white;", isVisible=True)
+        self.page_sift_layout.addWidget(sift_ssd_label)
+
+        (self.sift_ssd_threshold_slider,
+         sift_ssd_threshold_slider_label,
+         sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 1, 0.5, is_float=True)
+        self.page_sift_layout.addLayout(sift_ssd_threshold_slider_layout)
 
         self.sift_ssd_match_button = self.util.createButton("SSD Match", self.button_style)
         self.page_sift_layout.addWidget(self.sift_ssd_match_button)
