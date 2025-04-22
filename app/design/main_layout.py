@@ -291,6 +291,9 @@ class Ui_MainWindow(object):
         back_button = self.util.createButton("Back", self.button_style, self.show_main_buttons)
         self.page_sift_layout.addWidget(back_button)
 
+        self.upload_sift_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
+        self.page_sift_layout.addWidget(self.upload_sift_photo_button)
+
         sift_title = self.util.createLabel("SIFT", "color:white;", isVisible=True, isHead=True)
         self.page_sift_layout.addWidget(sift_title)
 
@@ -329,9 +332,6 @@ class Ui_MainWindow(object):
         #  sift_magnitude_threshold_slider_layout) = self.util.createSpinBox(1, 10, 1)
         # self.page_sift_layout.addLayout(sift_magnitude_threshold_slider_layout)
 
-        self.upload_sift_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
-        self.page_sift_layout.addWidget(self.upload_sift_photo_button)
-
         self.sift_extract_points_button = self.util.createButton("Extract Points", self.button_style)
         self.page_sift_layout.addWidget(self.sift_extract_points_button)
 
@@ -348,6 +348,7 @@ class Ui_MainWindow(object):
 
         sift_ssd_label = self.util.createLabel("SST Threshold", "Color:white;", isVisible=True)
         self.page_sift_layout.addWidget(sift_ssd_label)
+
         (self.sift_ssd_threshold_slider,
          sift_ssd_threshold_slider_label,
          sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 1, 0.5, is_float=True)
