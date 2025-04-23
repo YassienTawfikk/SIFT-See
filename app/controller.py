@@ -330,7 +330,12 @@ class MainWindowController:
         kp2_adjusted = adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
 
         # Match features (using original descriptors)
-        matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2, type)
+        SSD_threshold=self.ui.sift_ssd_threshold_slider.value()/100
+        print(SSD_threshold)
+        NCC_threshold=self.ui.sift_normalized_threshold_slider.value()/100
+        print(NCC_threshold)
+
+        matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2, type, SSD_threshold, NCC_threshold)
 
         # Draw matches on resized images with adjusted keypoints
         self.processed_image = self.sift_srv.draw_matches(

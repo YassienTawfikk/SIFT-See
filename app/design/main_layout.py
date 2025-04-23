@@ -340,7 +340,7 @@ class Ui_MainWindow(object):
 
         (self.sift_normalized_threshold_slider,
          sift_normalized_threshold_slider_label,
-         sift_normalized_threshold_slider_layout) = self.util.createSlider(0, 300, 150)
+         sift_normalized_threshold_slider_layout) = self.util.createSlider(0, 1, 0.5, is_float=True)
         self.page_sift_layout.addLayout(sift_normalized_threshold_slider_layout)
 
         self.sift_normalized_match_button = self.util.createButton("Normalized Match", self.button_style)
@@ -351,7 +351,7 @@ class Ui_MainWindow(object):
 
         (self.sift_ssd_threshold_slider,
          sift_ssd_threshold_slider_label,
-         sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 1, 0.5, is_float=True)
+         sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 300, 150)  
         self.page_sift_layout.addLayout(sift_ssd_threshold_slider_layout)
 
         self.sift_ssd_match_button = self.util.createButton("SSD Match", self.button_style)
