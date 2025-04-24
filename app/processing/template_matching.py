@@ -4,7 +4,7 @@ import numpy as np
 class TemplateMatching:
 
     @staticmethod
-    def match_template(image, template, type="NCC"):
+    def match_template(image, template, method="NCC"):
 
         output=image #initialize
         # Convert image and temp to grayscale if needed
@@ -17,7 +17,7 @@ class TemplateMatching:
         img_h, img_w = image.shape
         h, w = template.shape
 
-        if type=="SSD":
+        if method=="SSD":
             #initialize ssd array (assume no padding)
             ssd_map = np.zeros((img_h - h + 1, img_w - w + 1), dtype=np.float32)
 
@@ -38,9 +38,9 @@ class TemplateMatching:
             bottom_right = (top_left[0] + template.shape[1], top_left[1] + template.shape[0])
             cv2.rectangle(output, top_left, bottom_right, (0, 0, 255), 2)
 
-        elif type=="NCC":
+        elif method=="NCC":
             ncc_map = np.zeros((img_h - h + 1, img_w - w + 1), dtype=np.float32)
-
+            
             # Precompute template normalization terms
             template = template.astype(np.float32)
             template_mean = np.mean(template)

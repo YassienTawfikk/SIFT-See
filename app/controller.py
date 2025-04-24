@@ -73,8 +73,9 @@ class MainWindowController:
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
         self.ui.sift_extract_points_button.clicked.connect(self.extract_sift_features)
         self.ui.sift_normalized_match_button.clicked.connect(lambda: self.match_sift_features("NCC"))
-        # self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
-        self.ui.sift_ssd_match_button.clicked.connect(self.match_template)
+        self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
+        self.ui.apply_ssd_template_match_button.clicked.connect(lambda: self.match_template("SSD"))
+        self.ui.apply_ncc_template_match_button.clicked.connect(lambda: self.match_template("NCC"))
 
 
     def drawImage(self):
@@ -323,12 +324,12 @@ class MainWindowController:
 
         self.showProcessed()
 
-    def match_template(self):
+    def match_template(self, method="SSD"):
         """Perform template matching"""
         if self.original_image is None or self.second_image is None:
             return
 
-        self.processed_image=TemplateMatching.match_template(self.original_image, self.second_image)
+        self.processed_image=TemplateMatching.match_template(self.original_image, self.second_image, method)
         self.showProcessed()
 
 
