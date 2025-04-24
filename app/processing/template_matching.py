@@ -18,7 +18,7 @@ class TemplateMatching:
         h, w = template.shape
 
         if method=="SSD":
-            #initialize ssd array (assume no padding)
+            #initialize ssd array (assume no padding and that template is completely inside the image)
             ssd_map = np.zeros((img_h - h + 1, img_w - w + 1), dtype=np.float32)
 
             # Slide the window and calculate SSD
@@ -27,39 +27,33 @@ class TemplateMatching:
                     window = image[y:y + h, x:x + w]
                     diff = (window.astype(np.float32) - template.astype(np.float32))
                     ssd = np.sum(diff ** 2)
-                    ssd_map[y, x] = ssd
+                    ssd_map[y, x] = ssd  #stores the SSD value for the window whose top-left corner is at (x, y).
 
             # Find the position with minimum SSD
-            # min_val = np.min(ssd_map)
-            min_loc = np.unravel_index(np.argmin(ssd_map), ssd_map.shape)   #as in (y,x)
+            min_loc = np.unravel_index(np.argmin(ssd_map), ssd_map.shape)   #gives coordinates as in (y,x) ---> row,col
 
-            # output = image.copy()
-            top_left = min_loc[::-1]  # (x, y)
+            top_left = min_loc[::-1]  # switch coordinates order to be (x, y) --> col, row
             bottom_right = (top_left[0] + template.shape[1], top_left[1] + template.shape[0])
             cv2.rectangle(output, top_left, bottom_right, (0, 0, 255), 2)
 
         elif method=="NCC":
             ncc_map = np.zeros((img_h - h + 1, img_w - w + 1), dtype=np.float32)
-            
+
             # Precompute template normalization terms
             template = template.astype(np.float32)
             template_mean = np.mean(template)
-            template_std = np.std(template)
-            template_norm = (template - template_mean)
+            template_centered = (template - template_mean)
 
             for y in range(ncc_map.shape[0]):
                 for x in range(ncc_map.shape[1]):
                     window = image[y:y + h, x:x + w].astype(np.float32)
                     window_mean = np.mean(window)
-                    window_std = np.std(window)
+                
+                    window_centered = (window - window_mean)
 
-                    if window_std == 0 or template_std == 0:
-                        ncc_map[y, x] = 0
-                        continue
-
-                    window_norm = (window - window_mean)
-                    numerator = np.sum(window_norm * template_norm)
-                    denominator = np.sqrt(np.sum(window_norm ** 2) * np.sum(template_norm ** 2))
+                    #build NCC equation
+                    numerator = np.sum(window_centered * template_centered)
+                    denominator = np.sqrt(np.sum(window_centered ** 2) * np.sum(template_centered ** 2))
 
                     ncc_map[y, x] = numerator / denominator
 
