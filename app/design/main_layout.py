@@ -378,8 +378,11 @@ class Ui_MainWindow(object):
         self.upload_template_matching_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
         self.template_matching_layout.addWidget(self.upload_template_matching_photo_button)
 
-        self.apply_template_match_button = self.util.createButton("Apply", self.button_style)
-        self.template_matching_layout.addWidget(self.apply_template_match_button)
+        self.apply_ssd_template_match_button = self.util.createButton("SSD Apply", self.button_style)
+        self.template_matching_layout.addWidget(self.apply_ssd_template_match_button)
+
+        self.apply_ncc_template_match_button = self.util.createButton("NCC Apply", self.button_style)
+        self.template_matching_layout.addWidget(self.apply_ncc_template_match_button)
 
     def toggle_kernel_size(self, kernal_button):
         """
