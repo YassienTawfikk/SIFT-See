@@ -251,30 +251,35 @@ class SIFTService:
             else:  #method is NNC
                 print("NNC METHOD USED")
 
-                # Normalize descriptor1
-                norm1 = desc1 / (np.linalg.norm(desc1) + 1e-10)
+                desc1 = descriptors1[i]  # shape: (D,)
+                desc1_mean = np.mean(desc1)
+                desc1_centered = desc1 - desc1_mean
 
-                # Normalize all descriptors2
-                norm2 = descriptors2 / (np.linalg.norm(descriptors2, axis=1, keepdims=True) + 1e-10)
+                # Initialize best match values
+                ncc_list=[]
 
-                # Compute NCC as dot product
-                ncc_scores = norm2 @ norm1  # shape: (N2,)
+                for j, desc2 in enumerate(descriptors2):
+                    desc2_mean = np.mean(desc2)
+                    desc2_centered = desc2 - desc2_mean
 
-                # Get best match (maximum NCC)
-                j = np.argmax(ncc_scores)
-                similarity = ncc_scores[j]
+                    numerator = np.sum(desc1_centered * desc2_centered)
+                    denominator = np.sqrt(np.sum(desc1_centered ** 2) * np.sum(desc2_centered ** 2))
 
-                if similarity < NCC_threshold:
+                    ncc = numerator / (denominator)  
+
+                    ncc_list.append(ncc)
+
+                j=np.argmax(ncc_list)
+                best_ncc=ncc_list[j]
+
+                if best_ncc < NCC_threshold:
                     continue 
 
                 # Create a DMatch object (higher NCC = better match, so use -similarity for distance)
-                match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(-similarity))
-
+                match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(-best_ncc))
 
             matches.append(match)
-            # print(match)
-            # for m in matches[:10]:  # just print first 10 to keep it clean
-            #     print(f"queryIdx: {m.queryIdx}, trainIdx: {m.trainIdx}, distance: {m.distance:.2f}")
+   
         return matches
 
     def draw_matches(self, img1: np.ndarray, kp1: list, img2: np.ndarray,
