@@ -6,6 +6,7 @@ from app.utils.logging_manager import LoggingManager
 from app.services.image_service import ImageServices
 from app.processing.harris import HarrisService
 from app.processing.sift import SIFTService
+from app.processing.template_matching import TemplateMatching
 
 # Main GUI design
 from app.design.main_layout import Ui_MainWindow
@@ -72,7 +73,9 @@ class MainWindowController:
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
         self.ui.sift_extract_points_button.clicked.connect(self.extract_sift_features)
         self.ui.sift_normalized_match_button.clicked.connect(lambda: self.match_sift_features("NCC"))
-        self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
+        # self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
+        self.ui.sift_ssd_match_button.clicked.connect(self.match_template)
+
 
     def drawImage(self):
         self.path = self.srv.upload_image_file()
@@ -110,6 +113,18 @@ class MainWindowController:
 
         self.srv.clear_image(self.ui.processed_groupBox)
         self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.original_image)
+
+    # Resize both images while maintaining aspect ratio
+    def resize_image(self,image, target_height, target_width):
+        if image is None:
+            return None, 1.0, 1.0
+        h, w = image.shape[:2]
+        scale_w = target_width / w
+        scale_h = target_height / h
+        scale = min(scale_w, scale_h)
+        new_width = int(w * scale)
+        new_height = int(h * scale)
+        return cv2.resize(image, (new_width, new_height)), scale, scale
 
     def showProcessed(self):
         """Display the processed image in the large top box."""
@@ -220,7 +235,8 @@ class MainWindowController:
         self._display_sift_features()
         self.log.log(time)
 
-        # Adjust keypoints for resized images
+
+    # Adjust keypoints for resized images
     def _adjust_keypoints(self, keypoints, scale_x, scale_y):
         adjusted = []
         for kp in keypoints:
@@ -234,6 +250,8 @@ class MainWindowController:
                 class_id=kp.class_id
             ))
         return adjusted
+    
+    
     def _display_sift_features(self):
         """Display SIFT features on resized versions of the images."""
         # Get groupbox dimensions
@@ -244,23 +262,11 @@ class MainWindowController:
         target_width = box_width // 2
         target_height = box_height
 
-        # Resize both images while maintaining aspect ratio
-        def resize_image(image):
-            if image is None:
-                return None, 1.0, 1.0
-            h, w = image.shape[:2]
-            scale_w = target_width / w
-            scale_h = target_height / h
-            scale = min(scale_w, scale_h)
-            new_width = int(w * scale)
-            new_height = int(h * scale)
-            return cv2.resize(image, (new_width, new_height)), scale, scale
-
         # Resize and get scale factors
-        img1_resized, scale_x1, scale_y1 = resize_image(self.original_image)
+        img1_resized, scale_x1, scale_y1 = self.resize_image(self.original_image, target_height, target_width)
 
         if self.second_image is not None:
-            img2_resized, scale_x2, scale_y2 = resize_image(self.second_image)
+            img2_resized, scale_x2, scale_y2 = self.resize_image(self.second_image, target_height, target_width)
 
 
             # Adjust keypoints
@@ -294,46 +300,17 @@ class MainWindowController:
         target_width = box_width // 2
         target_height = box_height
 
-        # Resize both images while maintaining aspect ratio
-        def resize_image(image):
-            if image is None:
-                return None, 1.0, 1.0
-            h, w = image.shape[:2]
-            scale_w = target_width / w
-            scale_h = target_height / h
-            scale = min(scale_w, scale_h)
-            new_width = int(w * scale)
-            new_height = int(h * scale)
-            return cv2.resize(image, (new_width, new_height)), scale, scale
-
         # Resize and get scale factors
-        img1_resized, scale_x1, scale_y1 = resize_image(self.original_image)
-        img2_resized, scale_x2, scale_y2 = resize_image(self.second_image)
-
-        # Adjust keypoints for resized images
-        def adjust_keypoints(keypoints, scale_x, scale_y):
-            adjusted = []
-            for kp in keypoints:
-                adjusted.append(cv2.KeyPoint(
-                    x=kp.pt[0] * scale_x,
-                    y=kp.pt[1] * scale_y,
-                    size=kp.size * min(scale_x, scale_y),
-                    angle=kp.angle,
-                    response=kp.response,
-                    octave=kp.octave,
-                    class_id=kp.class_id
-                ))
-            return adjusted
+        img1_resized, scale_x1, scale_y1 = self.resize_image(self.original_image, target_height, target_width)
+        img2_resized, scale_x2, scale_y2 = self.resize_image(self.second_image, target_height, target_width)
 
         # Adjust keypoints
-        kp1_adjusted = adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
-        kp2_adjusted = adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
+        kp1_adjusted = self._adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
+        kp2_adjusted = self._adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
 
         # Match features (using original descriptors)
-        SSD_threshold=self.ui.sift_ssd_threshold_slider.value()/100
-        print(SSD_threshold)
+        SSD_threshold=self.ui.sift_ssd_threshold_slider.value()/100  
         NCC_threshold=self.ui.sift_normalized_threshold_slider.value()/100
-        print(NCC_threshold)
 
         matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2, type, SSD_threshold, NCC_threshold)
 
@@ -345,6 +322,14 @@ class MainWindowController:
         )
 
         self.showProcessed()
+
+    def match_template(self):
+        # if self.original_image or self.second_image is None:
+        #     return
+
+        self.processed_image=TemplateMatching.match_template(self.original_image, self.second_image)
+        self.showProcessed()
+
 
     def closeApp(self):
         """Close the application."""
