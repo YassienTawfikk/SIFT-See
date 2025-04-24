@@ -71,12 +71,12 @@ class MainWindowController:
         self.ui.sift_edge_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         # self.ui.sift_magnitude_threshold_spinbox.valueChanged.connect(self.update_sift_parameters)
         self.ui.upload_sift_photo_button.clicked.connect(self.upload_second_image)
+        self.ui.upload_template_matching_photo_button.clicked.connect(self.upload_second_image)
         self.ui.sift_extract_points_button.clicked.connect(self.extract_sift_features)
         self.ui.sift_normalized_match_button.clicked.connect(lambda: self.match_sift_features("NCC"))
         self.ui.sift_ssd_match_button.clicked.connect(lambda: self.match_sift_features("SSD"))
         self.ui.apply_ssd_template_match_button.clicked.connect(lambda: self.match_template("SSD"))
         self.ui.apply_ncc_template_match_button.clicked.connect(lambda: self.match_template("NCC"))
-
 
     def drawImage(self):
         self.path = self.srv.upload_image_file()
@@ -116,7 +116,7 @@ class MainWindowController:
         self.srv.set_image_in_groupbox(self.ui.processed_groupBox, self.original_image)
 
     # Resize both images while maintaining aspect ratio
-    def resize_image(self,image, target_height, target_width):
+    def resize_image(self, image, target_height, target_width):
         if image is None:
             return None, 1.0, 1.0
         h, w = image.shape[:2]
@@ -206,7 +206,6 @@ class MainWindowController:
             # magnitude_threshold=magnitude_threshold
         )
 
-
     def upload_second_image(self):
         """Upload a second image for SIFT matching."""
         self.path_2 = self.srv.upload_image_file()
@@ -236,7 +235,6 @@ class MainWindowController:
         self._display_sift_features()
         self.log.log(time)
 
-
     # Adjust keypoints for resized images
     def _adjust_keypoints(self, keypoints, scale_x, scale_y):
         adjusted = []
@@ -251,8 +249,7 @@ class MainWindowController:
                 class_id=kp.class_id
             ))
         return adjusted
-    
-    
+
     def _display_sift_features(self):
         """Display SIFT features on resized versions of the images."""
         # Get groupbox dimensions
@@ -268,7 +265,6 @@ class MainWindowController:
 
         if self.second_image is not None:
             img2_resized, scale_x2, scale_y2 = self.resize_image(self.second_image, target_height, target_width)
-
 
             # Adjust keypoints
             kp1_adjusted = self._adjust_keypoints(self.keypoints_1, scale_x1, scale_y1)
@@ -310,8 +306,8 @@ class MainWindowController:
         kp2_adjusted = self._adjust_keypoints(self.keypoints_2, scale_x2, scale_y2)
 
         # Match features (using original descriptors)
-        SSD_threshold=self.ui.sift_ssd_threshold_slider.value()/100  
-        NCC_threshold=self.ui.sift_normalized_threshold_slider.value()/100
+        SSD_threshold = self.ui.sift_ssd_threshold_slider.value() / 100
+        NCC_threshold = self.ui.sift_normalized_threshold_slider.value() / 100
 
         matches = self.sift_srv.match_features(self.descriptors_1, self.descriptors_2, type, SSD_threshold, NCC_threshold)
 
@@ -329,9 +325,8 @@ class MainWindowController:
         if self.original_image is None or self.second_image is None:
             return
 
-        self.processed_image=TemplateMatching.match_template(self.original_image, self.second_image, method)
+        self.processed_image = TemplateMatching.match_template(self.original_image, self.second_image, method)
         self.showProcessed()
-
 
     def closeApp(self):
         """Close the application."""
