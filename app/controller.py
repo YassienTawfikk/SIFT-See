@@ -324,8 +324,9 @@ class MainWindowController:
         self.showProcessed()
 
     def match_template(self):
-        # if self.original_image or self.second_image is None:
-        #     return
+        """Perform template matching"""
+        if self.original_image is None or self.second_image is None:
+            return
 
         self.processed_image=TemplateMatching.match_template(self.original_image, self.second_image)
         self.showProcessed()

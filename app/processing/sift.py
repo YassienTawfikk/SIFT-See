@@ -231,8 +231,6 @@ class SIFTService:
         for i, desc1 in enumerate(descriptors1):
 
             if method=="SSD":
-                print("SSD METHOD USED")
-
                 # Compute SSD to every descriptor in descriptors2
                 ssd = np.sum((descriptors2 - desc1) ** 2, axis=1)
 
@@ -242,40 +240,42 @@ class SIFTService:
                 # Store the match (i, j)
                 distance = ssd[j]
 
+                #if distance is larger than a threshold, skip it
                 if distance > SSD_threshold:
                     continue
 
-                # Create a DMatch object: (queryIdx, trainIdx, distance)
+                # Create a DMatch object that requires indices of the matched descriptors and their distance
                 match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(distance))
 
-            else:  #method is NNC
-                print("NNC METHOD USED")
-
+            elif method=="NCC":
                 desc1 = descriptors1[i]  # shape: (D,)
                 desc1_mean = np.mean(desc1)
-                desc1_centered = desc1 - desc1_mean
+                desc1_centered = desc1 - desc1_mean       #compute D1-D1_mean
 
                 # Initialize best match values
                 ncc_list=[]
 
                 for j, desc2 in enumerate(descriptors2):
                     desc2_mean = np.mean(desc2)
-                    desc2_centered = desc2 - desc2_mean
+                    desc2_centered = desc2 - desc2_mean    #compute D2-D2_mean
 
+                    #build NCC equation
                     numerator = np.sum(desc1_centered * desc2_centered)
                     denominator = np.sqrt(np.sum(desc1_centered ** 2) * np.sum(desc2_centered ** 2))
 
-                    ncc = numerator / (denominator)  
+                    ncc = numerator / denominator
 
                     ncc_list.append(ncc)
 
+                #store max ncc index and value
                 j=np.argmax(ncc_list)
                 best_ncc=ncc_list[j]
 
                 if best_ncc < NCC_threshold:
                     continue 
 
-                # Create a DMatch object (higher NCC = better match, so use -similarity for distance)
+                # Create a DMatch object 
+                # DMatch sees smaller distance as the better one (higher priority) so we use -similarity for distance
                 match = cv2.DMatch(_queryIdx=i, _trainIdx=j, _distance=float(-best_ncc))
 
             matches.append(match)

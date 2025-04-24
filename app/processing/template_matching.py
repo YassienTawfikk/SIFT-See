@@ -5,6 +5,7 @@ class TemplateMatching:
 
     @staticmethod
     def match_template(image, template, type="NCC"):
+
         output=image #initialize
         # Convert image and temp to grayscale if needed
         if len(image.shape) == 3:
@@ -12,7 +13,7 @@ class TemplateMatching:
         if len(template.shape) == 3:
             template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 
-        #determine dimensions
+        #image and template dimensions
         img_h, img_w = image.shape
         h, w = template.shape
 
