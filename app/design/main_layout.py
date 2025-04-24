@@ -228,6 +228,15 @@ class Ui_MainWindow(object):
         self.setupSIFTWidgets()
         self.sidebar_stacked.addWidget(self.page_sift_controls)
 
+        # PAGE 2: SIFT Controls
+        self.page_template_matching_controls = QtWidgets.QWidget()
+        self.template_matching_layout = QtWidgets.QVBoxLayout(self.page_template_matching_controls)
+        self.template_matching_layout.setSpacing(10)
+
+        # Add noise widgets to harris_operator_layout
+        self.setupTemplateMatchinWidgets()
+        self.sidebar_stacked.addWidget(self.page_template_matching_controls)
+
         # By default, show page 0
         self.sidebar_stacked.setCurrentIndex(0)
 
@@ -240,11 +249,12 @@ class Ui_MainWindow(object):
             "Harris Operator", self.button_style, self.show_harris_controls
         )
         self.show_sift_options_button = self.util.createButton("SIFT", self.button_style, self.show_sift_controls)
-
+        self.show_template_matching_button = self.util.createButton("Template Matching", self.button_style, self.show_template_matching_controls)
         # We'll store these main buttons in a list if you need to show/hide them
         self.MAIN_BUTTONS = [
             self.show_harris_options_button,
             self.show_sift_options_button,
+            self.show_template_matching_button
         ]
         self.kernel_sizes_array = [3, 5, 7]
         self.current_kernal_size = 3
@@ -351,11 +361,28 @@ class Ui_MainWindow(object):
 
         (self.sift_ssd_threshold_slider,
          sift_ssd_threshold_slider_label,
-         sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 300, 150)  
+         sift_ssd_threshold_slider_layout) = self.util.createSlider(0, 300, 150)
         self.page_sift_layout.addLayout(sift_ssd_threshold_slider_layout)
 
         self.sift_ssd_match_button = self.util.createButton("SSD Match", self.button_style)
         self.page_sift_layout.addWidget(self.sift_ssd_match_button)
+
+    def setupTemplateMatchinWidgets(self):
+        """
+        Creates the noise widgets (labels, sliders) and places them in harris_operator_layout.
+        """
+        # Back button used on the Filter page
+        back_button = self.util.createButton("Back", self.button_style, self.show_main_buttons)
+        self.template_matching_layout.addWidget(back_button)
+
+        self.upload_template_matching_photo_button = self.util.createButton("Upload Second Photo", self.button_style)
+        self.template_matching_layout.addWidget(self.upload_template_matching_photo_button)
+
+        self.apply_ssd_template_match_button = self.util.createButton("SSD Apply", self.button_style)
+        self.template_matching_layout.addWidget(self.apply_ssd_template_match_button)
+
+        self.apply_ncc_template_match_button = self.util.createButton("NCC Apply", self.button_style)
+        self.template_matching_layout.addWidget(self.apply_ncc_template_match_button)
 
     def toggle_kernel_size(self, kernal_button):
         """
@@ -522,6 +549,58 @@ class Ui_MainWindow(object):
 
         # Switch to SIFT controls page
         self.sidebar_stacked.setCurrentIndex(2)
+
+    def show_template_matching_controls(self):
+        """Switch to SIFT mode with new layout."""
+        # Store original sizes
+        self.original_sizes = {
+            'processed': self.processed_groupBox.size(),
+            'original': self.original_groupBox.size(),
+            'additional': self.additional_groupBox.size()
+        }
+
+        # Calculate SIFT mode sizes
+        processed_width = int(self.screen_size.width() * 0.75)
+        processed_height = int(self.screen_size.height() * 0.5)
+        small_width = int(processed_width * 0.48)
+        small_height = int(self.screen_size.height() * 0.3)
+
+        # Resize for SIFT mode
+        self.processed_groupBox.setFixedSize(processed_width, processed_height)
+        self.original_groupBox.setFixedSize(small_width, small_height)
+        self.additional_groupBox.setFixedSize(small_width, small_height)
+
+        # Set up SIFT layout - do this every time to ensure proper widget parenting
+        # Clear any existing layout in the sift container
+        if self.sift_container.layout():
+            old_layout = self.sift_container.layout()
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                if item.widget():
+                    item.widget().setParent(None)
+            QtWidgets.QWidget().setLayout(old_layout)  # This will delete the old layout
+
+        self.sift_layout = QtWidgets.QVBoxLayout(self.sift_container)
+        self.bottom_layout = QtWidgets.QHBoxLayout()
+
+        # We need to reparent the widgets from default container
+        self.original_groupBox.setParent(None)
+        self.processed_groupBox.setParent(None)
+        self.additional_groupBox.setParent(None)
+
+        self.bottom_layout.addWidget(self.original_groupBox)
+        self.bottom_layout.addWidget(self.additional_groupBox)
+        self.sift_layout.addWidget(self.processed_groupBox)
+        self.sift_layout.addLayout(self.bottom_layout)
+
+        # Show additional group box
+        self.additional_groupBox.show()
+
+        # Switch to SIFT layout using the stacked layout
+        self.main_image_layout.setCurrentIndex(1)
+
+        # Switch to SIFT controls page
+        self.sidebar_stacked.setCurrentIndex(3)
 
     def toggle_matching_techniques(self):
         text = "Cross Validation" if self.toggle_matching_techniques_button.text() == "SSD" else "SSD"
