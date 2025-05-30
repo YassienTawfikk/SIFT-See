@@ -88,9 +88,9 @@ Performs template matching that’s robust to intensity shifts.
 <td><b>Matched Result (NCC)</b></td>
 </tr>
 <tr>
-<td><img src="https://github.com/user-attachments/assets/db1d1489-d2a8-403a-94e4-79ad51a41748" width="250" height="250"/></td>
-<td><img src="https://github.com/user-attachments/assets/79ecbe3e-171d-412a-a1de-65a003b15cd0" width="250" height="250"/></td>
-<td><img src="https://github.com/user-attachments/assets/4316e7c2-c627-4f34-94f9-e036a7e34e68" width="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/35045c0f-bfef-45a1-b300-1050528c2fed" width="250" height="350"/></td>
+<td><img src="https://github.com/user-attachments/assets/ee3892c3-e5d5-4c17-8d34-d2e6e8f98862" width="250" height="350"/></td>
+<td><img src="https://github.com/user-attachments/assets/ecbd7a73-fcb6-4521-b458-a48568e70992" width="250" height="300"/></td>
 </tr>
 </table>
 
