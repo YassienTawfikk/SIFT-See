@@ -2,6 +2,7 @@ SiftSee/
 │
 ├── README.md
 ├── requirements.txt
+├── .gitignore
 ├── main.py
 │
 ├── app/
@@ -10,19 +11,17 @@ SiftSee/
 │   ├── design/
 │   │   ├── tools/
 │   │   │   └── gui_utilities.py
-│   │   │
 │   │   ├── ui/
 │   │   │   └── main_layout.ui
-│   │   │
 │   │   └── main_layout.py
 │   │
 │   ├── processing/
+│   │   │── harris.py
+│   │   │── sift.py
+│   │   └──  template_matching.py
 │   │
 │   ├── services/
 │   │   └── image_service.py
-│   │
-│   ├── tests/
-│   │   └── design_test.py
 │   │
 │   └── utils/
 │       └── clean_cache.py
@@ -34,7 +33,7 @@ SiftSee/
     ├── images/
     │   ├── image01
     │   ├── ......
-    │   └── image11
+    │   └── image19
     │
     └── docs/
-        └── OOP Structure.txt
+        └── ProjectStructure.txt
