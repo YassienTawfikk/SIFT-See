@@ -1,5 +1,4 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-import pyqtgraph as pg
 from PyQt5 import QtWidgets
 
 MAIN_COLOR = "rgb(30, 0, 0)"
