@@ -45,12 +45,14 @@ Computes scale- and rotation-invariant descriptors for robust object matching.
 <td><b>SIFT Features</b></td>
 </tr>
 <tr>
-<td><img src="" width="250"/></td>
-<td><img src="" width="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/db1d1489-d2a8-403a-94e4-79ad51a41748" width="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/8b76998b-d929-44a7-b36c-09a141013e4d" width="250"/></td>
 </tr>
 </table>
 
 > **Insight:** SIFT captures robust keypoints across scale and orientation shifts, enabling accurate matching across image pairs.
+
+
 
 ---
 
@@ -65,9 +67,9 @@ Matches descriptors using the **Sum of Squared Differences** metric.
 <td><b>Matched Pairs (SSD)</b></td>
 </tr>
 <tr>
-<td><img src="" width="250"/></td>
-<td><img src="" width="250"/></td>
-<td><img src="" width="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/db1d1489-d2a8-403a-94e4-79ad51a41748" width="250" height="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/79ecbe3e-171d-412a-a1de-65a003b15cd0" width="250" height="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/c642d724-5459-4152-9f99-0084cbeff143" width="250"/></td>
 </tr>
 </table>
 
@@ -86,9 +88,9 @@ Performs template matching that’s robust to intensity shifts.
 <td><b>Matched Result (NCC)</b></td>
 </tr>
 <tr>
-<td><img src="" width="250"/></td>
-<td><img src="" width="250"/></td>
-<td><img src="" width="250"/></td>
+<td><img src="https://github.com/user-attachments/assets/35045c0f-bfef-45a1-b300-1050528c2fed" width="250" height="350"/></td>
+<td><img src="https://github.com/user-attachments/assets/ee3892c3-e5d5-4c17-8d34-d2e6e8f98862" width="250" height="350"/></td>
+<td><img src="https://github.com/user-attachments/assets/ecbd7a73-fcb6-4521-b458-a48568e70992" width="250" height="300"/></td>
 </tr>
 </table>
 
@@ -128,6 +130,12 @@ python main.py
         </a>
       </td>
       <td align="center">
+        <a href="https://github.com/nancymahmoud1" target="_blank">
+          <img src="https://avatars.githubusercontent.com/u/125357872?v=4" width="150px;" alt="Nancy Mahmoud"/><br/>
+          <sub><b>Nancy Mahmoud</b></sub>
+        </a>
+      </td>
+      <td align="center">
         <a href="https://github.com/nariman-ahmed" target="_blank">
           <img src="https://avatars.githubusercontent.com/u/126989278?v=4" width="150px;" alt="Nariman Ahmed"/><br/>
           <sub><b>Nariman Ahmed</b></sub>
@@ -137,12 +145,6 @@ python main.py
         <a href="https://github.com/madonna-mosaad" target="_blank">
           <img src="https://avatars.githubusercontent.com/u/127048836?v=4" width="150px;" alt="Madonna Mosaad"/><br/>
           <sub><b>Madonna Mosaad</b></sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/nancymahmoud1" target="_blank">
-          <img src="https://avatars.githubusercontent.com/u/125357872?v=4" width="150px;" alt="Nancy Mahmoud"/><br/>
-          <sub><b>Nancy Mahmoud</b></sub>
         </a>
       </td>
     </tr>
